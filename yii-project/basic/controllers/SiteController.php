@@ -8,9 +8,42 @@ use yii\web\Controller;
 use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\ContactForm;
+use app\models\EntryForm;
 
 class SiteController extends Controller
 {
+    public function actionTest()
+    {
+        echo "Hello world";
+    }
+
+    public function actionHello($message = 'hello')
+    {
+        return $this->render('say', ['message' => $message]);
+    }
+
+    public function actionEntryTest()
+    {
+        $model = new EntryForm;
+        $model->name = "yang";
+        $model->email = "yang";
+        if ($model->validate()) {
+            echo "true";
+        } else {
+            print_r($model->getErrors());
+        }
+    }
+
+    public function actionEntry()
+    {
+        $model = new EntryForm;
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            $this->render('entry-confirm', ['model' => $model]);
+        } else {
+            $this->render('entry', ['model' => $model]);
+        }
+    }
+
     /**
      * @inheritdoc
      */
@@ -18,13 +51,13 @@ class SiteController extends Controller
     {
         return [
             'access' => [
-                'class' => AccessControl::className(),
+            'class' => AccessControl::className(),
                 'only' => ['logout'],
                 'rules' => [
                     [
                         'actions' => ['logout'],
                         'allow' => true,
-                        'roles' => ['@'],
+                        'roles' => ['@']
                     ],
                 ],
             ],
@@ -78,9 +111,12 @@ class SiteController extends Controller
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
             return $this->goBack();
         }
-        return $this->render('login', [
+        return $this->render(
+            'login',
+            [
             'model' => $model,
-        ]);
+            ]
+        );
     }
 
     /**
@@ -108,9 +144,12 @@ class SiteController extends Controller
 
             return $this->refresh();
         }
-        return $this->render('contact', [
+        return $this->render(
+            'contact',
+            [
             'model' => $model,
-        ]);
+            ]
+        );
     }
 
     /**

@@ -38,14 +38,13 @@ $config = [
             ],
         ],
         'db' => require(__DIR__ . '/db.php'),
-        /*
         'urlManager' => [
-            'enablePrettyUrl' => true,
-            'showScriptName' => false,
+            'enablePrettyUrl' => true, #是否
+            'showScriptName' => false, #是否隐藏入口文件
+            'enableStrictParsing' => false, #
             'rules' => [
             ],
-        ],
-        */
+        ]
     ],
     'params' => $params,
 ];

@@ -6,7 +6,7 @@
 rpm -Uvh https://mirror.webtatic.com/yum/el6/latest.rpm
 yum install php56w php56w-fpm php56w-mbstring php56w-pgsql php56w-pecl-redis
 
-2. openresty 
+2. openresty
 
 yum install readline-devel pcre-devel openssl-devel gcc
 wget https://openresty.org/download/openresty-1.11.2.1.tar.gz
@@ -20,7 +20,7 @@ ln -sf /usr/local/openresty/bin/openresty /usr/local/bin/openresty
 wget https://github.com/kr/beanstalkd/archive/v1.10.tar.gz
 
 
-4. redis 
+4. redis
 
 5. postgresql
 
@@ -31,5 +31,4 @@ chkconfig postgresql-9.5 on
 
 #初始化数据库和用户
 
-5. 
-
+5.
