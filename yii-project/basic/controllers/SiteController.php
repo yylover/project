@@ -12,6 +12,7 @@ use app\models\EntryForm;
 
 class SiteController extends Controller
 {
+
     public function actionTest()
     {
         echo "Hello world";
@@ -44,6 +45,11 @@ class SiteController extends Controller
         }
     }
 
+
+    public function actionTest()
+    {
+        echo "test";
+    }
     /**
      * @inheritdoc
      */
