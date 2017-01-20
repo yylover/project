@@ -1,6 +1,7 @@
 <?php
 
 $params = require(__DIR__ . '/params.php');
+$modules = require(__DIR__ . '/modules.php');
 
 $config = [
     'id' => 'basic',
@@ -33,7 +34,7 @@ $config = [
             'targets' => [
                 [
                     'class' => 'yii\log\FileTarget',
-                    'levels' => ['error', 'warning'],
+                    'levels' => ['error', 'warning', 'info', 'trace'],
                 ],
             ],
         ],
@@ -47,11 +48,7 @@ $config = [
         ]
     ],
     'params' => $params,
-    'modules' => [
-        'control' => [
-            'class' => 'app\modules\control\Control',
-        ],
-    ],
+    'modules' => $modules,
 ];
 
 if (YII_ENV_DEV) {
