@@ -1,6 +1,7 @@
 <?php
 
 $params = require(__DIR__ . '/params.php');
+$modules = require(__DIR__ . '/modules.php');
 $db = require(__DIR__ . '/db.php');
 
 $config = [
@@ -20,9 +21,9 @@ $config = [
                 ],
             ],
         ],
-        'db' => $db,
     ],
     'params' => $params,
+    'modules' => $modules,
     /*
     'controllerMap' => [
         'fixture' => [ // Fixture generation command line.
@@ -31,6 +32,9 @@ $config = [
     ],
     */
 ];
+foreach ($db as $key => $val) {
+    $config['components'][$key] = $val;
+}
 
 if (YII_ENV_DEV) {
     // configuration adjustments for 'dev' environment

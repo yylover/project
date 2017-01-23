@@ -7,4 +7,7 @@ return [
     'demo' => [
         'class' => 'app\modules\demo\Demo',
     ],
+    'tools' => [
+        'class' => 'app\modules\tools\Tools',
+    ],
 ];
