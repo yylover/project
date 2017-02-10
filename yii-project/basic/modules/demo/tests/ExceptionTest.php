@@ -2,7 +2,9 @@
 namespace app\modules\demo\tests;
 
 use PHPUnit\Framework\TestCase;
+use app\modules\demo\tests\CsvFileIterator;
 
+require "CsvFileIterator.php";
 /**
  * $this->assertEquals('value', 'response-value');
  * $this->assertEmpty();

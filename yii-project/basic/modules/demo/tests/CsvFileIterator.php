@@ -2,6 +2,9 @@
 
 namespace app\modules\demo\tests;
 
+/**
+ * 文件迭代器类，待测试对象类
+ */
 class CsvFileIterator implements \Iterator
 {
     protected $file;

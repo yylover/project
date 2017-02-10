@@ -7,6 +7,8 @@ use app\modules\demo\tests\CsvFileIterator;
 require "CsvFileIterator.php";
 
 /**
+ * 基本单元测试：
+ * 断言函数，依赖，
  * $this->assertEquals('value', 'response-value');
  * $this->assertEmpty();
  */
@@ -66,6 +68,7 @@ class StackTest extends TestCase
 
     /**
      * 3. 多重依赖测试
+     * 参数不用明确声明，采用func_get_args获取参数
      */
     public function testProducerFirst()
     {
@@ -88,6 +91,10 @@ class StackTest extends TestCase
         $this->assertEquals(["first", 'second'], func_get_args());
     }
 
+    /**
+     * 4. 数据提供器测试
+     * @return array
+     */
     public function addprovider()
     {
         return [
@@ -98,6 +105,7 @@ class StackTest extends TestCase
         ];
     }
 
+    //命名数据集的数据供给器,这样输出信息更加详细
     public function addproviderDetail()
     {
         return [
@@ -117,6 +125,7 @@ class StackTest extends TestCase
         $this->assertEquals($a + $b, $expected);
     }
 
+    //迭代器
     public function addProviderFromIterator()
     {
         return new CsvFileIterator("./data_interator.csv");
