@@ -1,5 +1,23 @@
+Target:
+    基本数据结构
+        array vector list adlist stack queue dict string
+    Linux socket:
+    进程/线程
+    IP复用 select poll epoll kqueue
+    信号: 定时器、IP复用、文件
+    锁:
+### 其他:
+    so: 动态链接库
+    C 函数指针的含义
+    静态函数只能被文件内部使用了，
+
+
+
+
+
+
 1. C语言类型
-    没有bool类型
+    没有bool类型，只能用bool来代替。对int而言，非0都是true
 2. 规范
 
 3.
