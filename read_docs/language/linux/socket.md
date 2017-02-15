@@ -209,6 +209,7 @@ ssize_t recv(int sockfd, void *buf, size_t len, int flags);
 //MSG_PEEK::窥探读取缓存数据，不会清楚。
 //MSG_OOB::(BOTH):发送或接收紧急数据
 //MSG_NOSIGNAL:往发送关闭管道写数据不引起SIGPIPE信号
+返回值:阻塞模式发生错误EINTR, 非阻塞模式发生EAGAIN, EWOULDBLOCK是正常的。
 
 //UDP数据读写
 ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
