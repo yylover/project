@@ -167,7 +167,7 @@ localhost:50740->localhost:search-agent (SYN_SENT)
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen); //返回连接connect_fd
 >sockfd:监听套接字
 >addr:返回指定客户端地址。不感兴趣置成NULL
->len: 接收addr长度
+>len: 是输入参数,指向存有addr地址长度的整型数,
 ```
 > accept会阻塞进程，直到连接建立并返回连接套接字。
 >1. 监听套接字
