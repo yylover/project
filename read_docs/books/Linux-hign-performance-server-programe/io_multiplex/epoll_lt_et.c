@@ -11,12 +11,14 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>
+#include <pthread.h>
 
 /**
  * LT: 同一个事件会多次提示，上一次没读取完成也可以继续操作.
  * ET: 同一个读写事件只会提示一次，务必保证一次读取完所有数据。
  *
- * epoll:
+ * epoll:EPOLLONESHOT 保证一个socket的事件同一时间只会触发一个，这样保证了只有一个线程在处理该socket
+ *
  */
 
 #define MAX_EVENTS_NUMBER 1024
@@ -56,6 +58,29 @@ void addFd(int epollid, int fd, int enable_et) {
         log_fatal("epoll_ctl addfd failed");
     }
     setNonblock(fd); //将此文件描述符设置为非阻塞模式
+}
+
+void addfd_oneshot(int epollid, int fd, int enable_oneshot) {
+    struct epoll_event ee;
+    ee.data.fd = fd;
+    ee.events = EPOLLIN|EPOLLET; //注册读事件
+    if (enable_oneshot) {
+        ee.events |= EPOLLONESHOT;
+    }
+    if (epoll_ctl(epollid, EPOLL_CTL_ADD, fd, &ee) == -1) {
+        log_fatal("epoll_ctl addfd failed");
+    }
+    setNonblock(fd); //将此文件描述符设置为非阻塞模式
+}
+
+//重置EPOLLONESHOT事件，这样操作之后，即使fd上EPOLLONESHOT被注册，这样仍然会触发EPOLLIN事件
+void reset_oneshot(int fd) {
+    struct epoll_event ee;
+    ee.data.fd = fd;
+    ee.events = EPOLLIN|EPOLLET|EPOLLONESHOT; //注册读事件
+    if (epoll_ctl(epollid, EPOLL_CTL_MOD, fd, &ee) == -1) {
+        log_fatal("epoll_ctl addfd failed");
+    }
 }
 
 /**
@@ -136,6 +161,63 @@ void et(epoll_event *ee, int number , int epollfd, int listenfd) {
     }
 }
 
+struct fds {
+    int epollid;
+    int sockfd;
+} fds;
+
+
+void* worker(void *data) {
+    fds *fds_data = (struct fds *)data;
+    int sockfd = fds_data->sockfd;
+    int epollid = fds_data->epollid;
+
+    char buf[BUFFER_SIZE];
+    memset(buf, 0, BUFFER_SIZE);
+    while (1) {
+        int ret = recv(sockfd, buf, BUFFER_SIZE-1, 0);
+        if (ret == 0) { //socket 关闭
+            close(sockfd);
+            break;
+        } else if (ret == -1) {
+            if (errno == EAGAIN) { //已经读取完成
+                reset_oneshot(sockfd);
+                break;
+            }
+        } else {
+            printf("get content %s\n", buf);
+        }
+    }
+
+    //读取数据完成
+}
+
+void et_oneshot(epoll_event *ee, int number, int epollid, int listenfd) {
+    for (int i = 0; i < number ;i ++) {
+        int sockfd = ee[i].data.fd;
+        if (listenfd == sockfd) {
+            struct sockaddr_in client_addr;
+            memset(&client_addr, 0, sizeof client_addr);
+            socklen_t *client_len = sizeof client_addr;
+            int sock = accept(listenfd, &client_addr, &client_len);
+            if (sock < 0) {
+                log_fatal("accept failed");
+            }
+
+            addfd_oneshot(epollid, sock, 1);
+        } else if (ee[i].events & EPOLLIN) {// socket可读
+            //创建一个新的线程来处理该事件
+            pthread_t pthread;
+            fds fds_new_worker;
+            fds_new_worker.epollid = epollid;
+            fds_new_worker.sockfd = sockfd;
+            pthread_create(&pthread, NULL, worker, (void *)&fds_new_worker);
+        } else {
+            printf("something else happened\n");
+        }
+    }
+}
+
 
 int main() {
 
@@ -171,8 +253,12 @@ int main() {
             log_fatal("epoll_wait failed");
         }
 
+        //lt 工作模式
         lt(events, ret, epollid, sockfd);
+        //et 工作模式
         // et(events, ret, epollid, sockfd);
+        // et 带有EPOLLONESHOT工作模式
+        // et_oneshot(events, ret, epollid, sockfd);
     }
 
     close(sockfd);
