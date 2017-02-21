@@ -1,4 +1,4 @@
-#ifdef __ATHREAD_H__
+#ifndef __ATHREAD_H__
 #define __ATHREAD_H__
 
 #define THREAD_STACK_SIZE 10*1024*1024 //栈大小,10M

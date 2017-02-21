@@ -42,6 +42,6 @@ pid_t getpgid(pid_t pid);
  * 用户进程的进程组id
  * @param  pid  0设置当前进程，如果pid=pgid,则pid为进程组首领
  * @param  pgid 进程组id
- * @return      [description]
+ * @return
  */
 int setpgid(pid_t pid, pid_t pgid);
