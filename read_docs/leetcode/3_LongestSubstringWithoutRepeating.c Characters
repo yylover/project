@@ -1,0 +1,58 @@
+/*
+Given a string, find the length of the longest substring without repeating characters.
+
+Examples:
+
+Given "abcabcbb", the answer is "abc", which the length is 3.
+
+Given "bbbbb", the answer is "b", with the length of 1.
+
+Given "pwwkew", the answer is "wke", with the length of 3. Note that the answer must be a substring, "pwke" is a subsequence and not a substring.
+*/
+
+/*
+不重复的子串的长度
+思路:
+*/
+
+
+int lengthOfLongestSubstring(char* s) {
+    if (s == NULL) {
+        return 0;
+    }
+    if (strlen(s) == 1) {
+        return 1;
+    }
+
+    unsigned char set[256];
+    memset(set, 0, sizeof(set));
+
+    char *head = s;
+    char *prev = s;
+    char *end = head+strlen(s);
+
+    int max = 0;
+    int maxLen = 0;
+    while (head < end && end - head > maxLen) {
+            set[*prev] = 1;
+            prev = prev + 1;
+            maxLen += 1;
+
+            if (maxLen > max)
+                max = maxLen;
+
+            // printf("%d", maxLen);
+            if (set[*prev] == 1) {
+                while (*prev != *head) {
+                    set[*head] = 0;
+                    head += 1;
+                    maxLen -= 1;
+                }
+                set[*head] = 0;
+                head += 1;
+                maxLen -= 1;
+            }
+    }
+
+    return max;
+}
