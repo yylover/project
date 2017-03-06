@@ -1,15 +1,37 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
+
+var t int32
+var x map[int]int
+
+func setT() {
+	for i := 0; i < 100; i++ {
+		x[i] = i
+	}
+}
+
+func getT() {
+	for i := 0; i < 1000; i++ {
+		fmt.Printf("%d\n", x[i])
+	}
+}
 
 func main() {
-	var a []int = nil
-	a = append(a, 1)
-	a = append(a, 2)
-	a = append(a, 3)
-	fmt.Printf("slice :%v\n", a)
+	t = 0
+	x = make(map[int]int)
 
-	var b map[string]string = make(map[string]string, 99)
-	b["name"] = "uang" //panic
-	fmt.Printf("map: %d\n", len(b))
+	go setT()
+	// go setT()
+	go getT()
+	go getT()
+	go getT()
+	go getT()
+
+	s := 159
+	time.Sleep(time.Second)
+	fmt.Printf("map: %d %d\n", t, int64(s))
 }
