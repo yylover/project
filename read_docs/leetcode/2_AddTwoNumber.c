@@ -15,8 +15,9 @@ Output: 7 -> 0 -> 8
  */
 
 int lengthOfLongestSubstring(char* s) {
-unsigned char set[256];
-memset(set, 0);
+    unsigned char set[256];
+    memset(set, 0, sizeof(set));
+
 }
 
 

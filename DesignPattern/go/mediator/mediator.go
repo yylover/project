@@ -2,6 +2,9 @@ package main
 
 import "fmt"
 
+/*如何解决：继承或依赖（推荐）。
+关键代码：适配器继承或依赖已有的对象，实现想要的目标接口。*/
+
 //AdvancedMediaPlayer
 type AdvancedMediaPlayer interface {
 	playVlc(filename string)
