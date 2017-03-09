@@ -1,91 +1,78 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
-/*如何解决：继承或依赖（推荐）。
-关键代码：适配器继承或依赖已有的对象，实现想要的目标接口。*/
+/*
+中介者模式封装对象之间互交，使依赖变的简单，并且使复杂互交简单化，封装在中介者中。
+*/
 
-//AdvancedMediaPlayer
-type AdvancedMediaPlayer interface {
-	playVlc(filename string)
-	playMp4(filename string)
+type CDDriver struct {
+	Data string
 }
 
-//ConcreateProductA implement interface ProductParent
-type VlcPlayer struct {
+func (c *CDDriver) ReadData() {
+	c.Data = "music"
 }
 
-func (*VlcPlayer) playVlc(filename string) {
-	fmt.Println("playVlc")
-}
-func (*VlcPlayer) playMp4(filename string) {
-
+type CPU struct {
+	Video string
+	Sound string
 }
 
-//Mp4Player 具体的mp4播放器
-type Mp4Player struct {
+func (c *CPU) Process(data string) {
+	sp := strings.Split(data, ",")
+	c.Sound = sp[0]
+	c.Video = sp[1]
+
+	fmt.Printf("CPU: split data with Sound %s, Video %s\n", c.Sound, c.Video)
+	GetMediatorInstance().changed(c)
 }
 
-func (*Mp4Player) playVlc(filename string) {
-
-}
-func (*Mp4Player) playMp4(filename string) {
-	fmt.Println("playMp4")
+type VideoCard struct {
+	Data string
 }
 
-//MediaPlayer 具体的使用接口
-type MediaPlayer interface {
-	play(audioType string, fileName string)
+func (v *VideoCard) Display(data string) {
+	v.Data = data
+	fmt.Printf("VideoCard: display %s\n", v.Data)
+	GetMediatorInstance().changed(v)
 }
 
-//MediaAdapter 具体的适配器
-type MediaAdapter struct {
-	player AdvancedMediaPlayer
+type SoundCard struct {
+	Data string
 }
 
-func NewMediaApapter(audioType string) *MediaAdapter {
-	if audioType != "vlc" && audioType != "mp4" {
-		return nil
+func (s *SoundCard) Play(data string) {
+	s.Data = data
+	fmt.Printf("SoundCard: play %s\n", s.Data)
+	GetMediatorInstance().changed(s)
+}
+
+type Mediator struct {
+	CD    *CDDriver
+	CPU   *CPU
+	Video *VideoCard
+	Sound *SoundCard
+}
+
+var mediator *Mediator
+
+func GetMediatorInstance() *Mediator {
+	if mediator == nil {
+		mediator = &Mediator{}
 	}
+	return mediator
+}
 
-	m := &MediaAdapter{}
-	if audioType == "vlc" {
-		m.player = &VlcPlayer{}
-	} else {
-		m.player = &Mp4Player{}
+func (m *Mediator) changed(i interface{}) {
+	switch inst := i.(type) {
+	case *CDDriver:
+		m.CPU.Process(inst.Data)
+	case *CPU:
+		m.Sound.Play(inst.Sound)
+		m.Video.Display(inst.Video)
 	}
-	return m
-}
-
-func (m *MediaAdapter) play(audioType string, fileName string) {
-	if audioType == "vlc" {
-		m.player.playVlc(fileName)
-	} else {
-		m.player.playMp4(fileName)
-	}
-}
-
-//AudioPlayer 接口实体类
-type AudioPlayer struct {
-	adapter *MediaAdapter
-}
-
-func (a *AudioPlayer) play(audioType string, fileName string) {
-	if audioType == "mp3" {
-		fmt.Println("play mp3 self")
-	} else if audioType == "vlc" || audioType == "mp4" {
-		a.adapter.play(audioType, fileName)
-	} else {
-		fmt.Println("Invalid audio type")
-	}
-}
-
-func main() {
-	audioPlayer := &AudioPlayer{}
-	audioPlayer.adapter = NewMediaApapter("vlc")
-
-	audioPlayer.play("mp3", "test.mp3")
-	audioPlayer.play("vlc", "test.mp3")
-	audioPlayer.play("mp4", "test.mp3")
-	audioPlayer.play("cav", "test.mp3")
 }
