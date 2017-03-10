@@ -1,3 +1,5 @@
+# encoding=utf8
+
 import functools
 import time, uuid, logging
 
@@ -5,6 +7,13 @@ from datetime import date, datetime, timedelta
 import mysql.connector
 import threading
 from mysql.connector import errorcode
+
+'''
+1. 函数名_ __ 有讲究?
+2.
+
+
+'''
 
 
 # import datetime
@@ -25,13 +34,17 @@ class Dict(dict):
         self[key] = value
 
 
-
-
 def next_id(t=None):
     if t is None:
         t = time.time()
     return '%015d%s000' % (int(t * 1000), uuid.uuid4().hex)
 
+def _profiling(start, sql=''):
+    t = time.time() - start
+    if t > 0.1:
+        logging.warning("[PROFILING] [DB] %s:%s" %(t, sql) )
+    else :
+        logging.info("[PROFILING] [DB] %s:%s" %(t, sql) )
 
 class DBError(Exception):
     pass
@@ -39,18 +52,6 @@ class DBError(Exception):
 
 class MultiColumnsError(Exception):
     pass
-
-
-class _LasyConnection(object):
-    def __init__(self):
-        self.connection = None
-
-    def cursor(self):
-        if self.connection is None:
-            connection = engine.connect()
-
-            self.connection = connection
-        return self.connection.cursor()
 
 
 engine = None
@@ -62,7 +63,6 @@ class _Engine(object):
 
     def connect(self):
         return self._connect()
-
 
 # 创建于数据库的连接
 def create_engine(user, password, database, host='127.0.0.1', port=3306, **kw):
@@ -84,15 +84,15 @@ def create_engine(user, password, database, host='127.0.0.1', port=3306, **kw):
 
 
 # 懒加载连接器
-class __LasyConnection(object):
+class _LasyConnection(object):
     def __init__(self):
         self.connection = None
 
     def cursor(self):
         if self.connection is None:
             connection = engine.connect()
-            logging.info("open connection <%s> .." % hex(id(connection)))
             self.connection = connection
+            logging.info("open connection <%s> .." % hex(id(connection)))
         return self.connection.cursor()
 
     def commit(self):
@@ -135,12 +135,13 @@ class _DbCtx(threading.local):
 
 _db_ctx = _DbCtx()
 
+# 数据库自动连接的装饰器
 class _ConnectionCtx(object):
     def __enter__(self):
         global _db_ctx
         self.should_cleanup = False
-        if not _db_ctx.is_init()
-            _db_ctx..init()
+        if not _db_ctx.is_init():
+            _db_ctx.init()
             self.should_cleanup = True
         return self
 
@@ -153,17 +154,19 @@ class _ConnectionCtx(object):
 def with_connection(func):
     @functools.wraps(func)
     def _wrapper(*args, **kw):
-        with _ConnectionCtx()
+        with _ConnectionCtx():
             return func(*args, **kw)
     return _wrapper
 
+
+# 事务的封装器
 class _TransactionCtx(object):
     def __enter__(self):
         global _db_ctx
         self.should_close_conn = False
         if not _db_ctx.is_init():
             _db_ctx.init()
-            self.should_close_conn = True
+            self.should_close_conn = True #连接已经建立
         _db_ctx.transactions = _db_ctx.transactions + 1
         return self
 
@@ -174,7 +177,7 @@ class _TransactionCtx(object):
             if _db_ctx.transactions == 0:
                 if exc_type is None:
                     self.commit()
-                else
+                else:
                     self.rollback()
         finally:
             if self.should_close_conn:
@@ -186,10 +189,10 @@ class _TransactionCtx(object):
             _db_ctx.connection.commit()
         except:
             _db_ctx.connection.rollback()
-            raise
+            raise #继续向上抛出异常
 
     def rollback(self):
-        global _db_ctx:
+        global _db_ctx
         _db_ctx.connection.rollback()
 
 def with_transaction(func):
@@ -201,9 +204,55 @@ def with_transaction(func):
 
     return  _wrapper
 
+@with_connection
 def _select(sql, first, *args):
     global _db_ctx
+    cursor = None
+    sql = sql.replace('?', '%s')
 
+    print "SQL :%s ARG:%s" % (sql, args)
+    logging.info("SQL: %s, ARGS:%s" % (sql, args))
+
+    try:
+        cursor = _db_ctx.connection.cursor()
+        cursor.execute(sql, args)
+
+        if cursor.description:
+            names = [x[0] for x in cursor.description]
+        if first:
+            values = cursor.fetchone()
+            if not values:
+                return None
+            return Dict(names, values)
+        return [Dict(names, x) for x in cursor.fetchall()]
+
+    finally:
+        if cursor:
+            cursor.close()
+
+def select_one(sql, *args):
+    return _select(sql, True, *args)
+
+def select_int(sql, *args):
+    d = _select(sql, True, *args)
+    print d
+
+
+def select(sql, *args):
+    return _select(sql, False, *args)
+
+
+@with_connection
+def _update(sql, *args):
+    global  _db_ctx
+
+
+
+def update(sql, *args):
+    return _update(sql, *args)
+
+def insert(sql, **kw):
+    pass
 
 
 
@@ -329,22 +378,33 @@ if __name__ == '__main__':
 
     tomorrow = datetime.now().date() + timedelta(days=1)
     data_employee = ('Geert', 'Vanderkelen', tomorrow, 'M', date(1999, 6, 14))
-    insertTableTest(cursor, add_sql, data_employee)
+    # insertTableTest(cursor, add_sql, data_employee)
 
     emp_no = cursor.lastrowid
     data_salary = {'emp_no': emp_no, 'salary': 5000, 'from_date': tomorrow, 'to_date': date(9999, 1, 1)}
-    insertTableTest(cursor, add_salary, data_salary)
+    # insertTableTest(cursor, add_salary, data_salary)
+    # queryTableTest(cursor)
 
-    queryTableTest(cursor)
+    #zip 函数
+    cols, args = zip(*data_salary.iteritems())
+    print "HELO"
+    print cols
+    print  args
 
-    connect.commit()
-    cursor.close()
-    connect.close()
+    select_sql = ("select * from salaries")
+    res = select(select_sql)
+    print res
+
+    select_sql = ("select * from salaries where emp_no = ?")
+    res = select(select_sql, 9)
+    print res
+
+    # connect.commit()
+    # cursor.close()
+    # connect.close()
 
     dict1 = {'a': 2, 'b': 3}
     d2 = {'c': 3, 'd': 4, 'a': 5}
     print  dict1
     print d2
     dict1.update(d2)
-    print
-

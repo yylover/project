@@ -1,2 +1,7 @@
-Thu, 09 Mar 2017 00:18:46 db.py[line:44] INFO create_engine
-Thu, 09 Mar 2017 00:18:46 db.py[line:58] INFO Init mysql engine <0x10f07cb90> ok.
+Sat, 11 Mar 2017 01:36:18 db.py[line:69] INFO create_engine
+Sat, 11 Mar 2017 01:36:18 db.py[line:83] INFO Init mysql engine <0x10b2018d0> ok.
+Sat, 11 Mar 2017 01:36:18 db.py[line:214] INFO SQL: select * from salaries, ARGS:()
+Sat, 11 Mar 2017 01:36:18 db.py[line:95] INFO open connection <0x10b201c50> ..
+Sat, 11 Mar 2017 01:36:18 db.py[line:109] INFO close connection <0x10b201c50>...
+Sat, 11 Mar 2017 01:36:18 db.py[line:214] INFO SQL: select * from salaries where emp_no = %s, ARGS:(9,)
+Sat, 11 Mar 2017 01:36:18 db.py[line:95] INFO open connection <0x10b201c50> ..
