@@ -104,15 +104,6 @@ void simple_selecion_sort(int a[], int num) {
 }
 
 /**
- * 堆排序
- * @param a   [description]
- * @param num [description]
- */
-void heap_sort(int a[], int num) {
-
-}
-
-/**
  * 冒泡排序
  * 冒泡排序属于交换排序，相邻两个如果第二个比第一个大，那么交换他们
  * @param a
@@ -174,6 +165,52 @@ void q_sort(int a[], int num) {
 }
 
 
+//构造堆
+void build_heap(int a[], int num, int index) {
+    int smallestIndex = index;
+    int temp;
+
+    while (smallestIndex < num) {
+        temp = 2 * index + 1;
+        if (temp < num && a[temp] < a[smallestIndex]) {
+            smallestIndex = temp;
+        }
+
+        temp = 2 * index + 2;
+        if (temp < num && a[temp] < a[smallestIndex]) {
+            smallestIndex = temp;
+        }
+
+        if (smallestIndex != index) {
+            swap_array(a, index, smallestIndex);
+            index = smallestIndex;
+        } else { //退出
+            return ;
+        }
+    }
+
+}
+
+
+/**
+ * 堆排序
+ * @param a
+ * @param num
+ */
+void heap_sort(int a[], int num) {
+    //构造堆
+    for (size_t i = num/2 -1; i < num; i--){
+        build_heap(a, num, i);
+    }
+
+    int index = num-1;
+    while (index > 0) {
+        swap_array(a, index, 0);
+        build_heap(a, index, 0);
+        index--;
+    }
+}
+
 
 void display_array(int a[], int num) {
     for (int i = 0; i < num; i++) {
@@ -184,15 +221,15 @@ void display_array(int a[], int num) {
 
 int main() {
     int a[] = {3, 2, 1, 4, 5, 11, 22, 15, 7, 9, 8};
-    q_sort(a, 11);
+    heap_sort(a, 11);
     display_array(a, 11);
 
     int b[] = {1};
-    q_sort(b, 1);
+    heap_sort(b, 1);
     display_array(b, 1);
 
     int c[] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
-    q_sort(c, 10);
+    heap_sort(c, 10);
     display_array(c, 10);
 
     return 0;
