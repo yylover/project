@@ -105,7 +105,7 @@ thread_worker_t *getWorker(int worker_id) {
 }
 
 void *thread_worker_cycle(void *arg) {
-    
+
 }
 
 void writeToClient(aeEventLoop *el, int fd, void *privdata, int mask) {

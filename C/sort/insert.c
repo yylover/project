@@ -16,6 +16,8 @@
     * 快速排序
 
 ## 归并排序
+    1. 需要申请空间，不可能原地排序
+    2. 递归进行排序时，每排完一次，就需要把排好的赋值回原来的数组
 ## 基数排序
 
 
@@ -211,6 +213,120 @@ void heap_sort(int a[], int num) {
     }
 }
 
+/**
+ * 归并排序内部函数
+ * 合并两个有序表
+ * @param a   数组
+ * @param i   第一个链表开始坐标
+ * @param j   第二个链表开始坐标
+ * @param len 总长度
+ */
+void merge_inner_sort(int a[], int startIndex, int midIndex, int endIndex, int b[]) {
+
+    int i =  startIndex, j = midIndex;
+    int k = startIndex;
+    while ( i < midIndex && j < endIndex) {
+        if (a[i] < a[j]) {
+            b[k++] = a[i++];
+        } else {
+            b[k++] = a[j++];
+        }
+    }
+
+    while (i < midIndex) {
+        b[k++]  = a[i++];
+    }
+
+    while (j < endIndex) {
+        b[k++] = a[j++];
+    }
+
+    //最后改变源数组
+    i = startIndex;
+    while (i < endIndex) {
+        a[i] = b[i];
+        i++;
+    }
+}
+
+void display_array(int a[], int num);
+
+/**
+ * 归并排序
+ * @param a   [description]
+ * @param num [description]
+ */
+void merge_sort(int a[], int b[], int startIndex, int endIndex) {
+    if (startIndex+1 < endIndex) { //长度为1 不进行排序
+        int half = (endIndex-startIndex) / 2;
+        merge_sort(a, b, startIndex, startIndex+half);
+        merge_sort(a, b, startIndex+half, endIndex);
+        merge_inner_sort(a, startIndex, startIndex+half, endIndex, b);
+    }
+}
+
+
+void mergeList(struct ListNode *p1, struct ListNode *p2) {
+    struct ListNode *phead = NULL;
+    struct ListNode *ptr = NULL;
+    while (p1 != NULL && p2 != NULL) {
+        if (p1->val < p2->val) {
+            if (phead == NULL) {
+                phead = p1;
+                ptr = p1;
+            } else {
+                ptr->next = p1;
+            }
+            p1 = p1->next;
+        } else {
+            if (phead == NULL) {
+                phead = p2;
+                ptr = p2;
+            } else {
+                ptr->next = p2;
+            }
+            p1 = p2->next;
+        }
+    }
+
+    while (p1 != NULL) {
+        ptr->next = p1;
+        p1 = p1->next;
+        ptr = ptr->next;
+    }
+
+    while (p2 != NULL) {
+        ptr->next = p2;
+        p2 = p2->next;
+        ptr = ptr->next;
+    }
+}
+
+struct ListNode * findHalf(struct ListNode *head) {
+    struct ListNode *p1 = head, *p2 = head;
+    while (p2 != NULL) {
+        p2 = p2->next;
+        if (p2 != NULL) {
+            p2 = p2->next;
+            p1 = p1->next;
+        }
+    }
+    return p1;
+}
+
+void merge_sort_list(struct ListNode *head) {
+    if (head->next != NULL) {
+        struct ListNode *ptr = findHalf(head);
+        struct ListNode *p2 = ptr->next;
+        ptr->next = NULL;
+
+        merge_sort_list(head);
+        merge_sort_list(p2);
+
+        mergeList(head, p2);
+    }
+}
+
 
 void display_array(int a[], int num) {
     for (int i = 0; i < num; i++) {
@@ -221,16 +337,23 @@ void display_array(int a[], int num) {
 
 int main() {
     int a[] = {3, 2, 1, 4, 5, 11, 22, 15, 7, 9, 8};
-    heap_sort(a, 11);
-    display_array(a, 11);
+    int d[11] = {0};
+    // heap_sort(a, 11);
+    // display_array(a, 11);
+    merge_sort(a, d, 0, 11);
+    display_array(d, 11);
 
     int b[] = {1};
-    heap_sort(b, 1);
-    display_array(b, 1);
+    // heap_sort(b, 1);
+    // display_array(b, 1);
+    merge_sort(a, d, 0, 1);
+    display_array(d, 1);
 
     int c[] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
-    heap_sort(c, 10);
-    display_array(c, 10);
+    // heap_sort(c, 10);
+    // display_array(c, 10);
+    merge_sort(a, d, 0, 10);
+    display_array(d, 10);
 
     return 0;
 }
