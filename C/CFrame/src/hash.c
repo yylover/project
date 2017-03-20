@@ -1,9 +1,9 @@
-#include "../include/hash.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
 #include <limits.h>
+#include "../include/hash.h"
 
 /**
  * 1. 哈希表插入，要判断空间，如果空间达到一定的比例，要重新分配更大的空间
@@ -49,15 +49,16 @@ static unsigned int getNextPower(unsigned long size) {
 /**
  * 哈希表初始化
  * @param  ht      哈希表
- * @param  capcity 容量
+ * @param  capacity 容量
  * @return
  */
-static int hashInit(HashTable *ht, unsigned int capcity) {
+static int hashInit(HashTable *ht, unsigned int capacity) {
     assert(ht);
 
-    ht->capcity  = getNextPower(capcity);
+    ht->capacity  = getNextPower(capacity);
+    ht->size = 0; //重置个数
 
-    ht->datas  = (HashEntry **)calloc(ht->capcity, sizeof(HashEntry*));
+    ht->datas  = (HashEntry **)calloc(ht->capacity, sizeof(HashEntry*));
     if (!ht->datas) {
         return -1;
     }
@@ -75,7 +76,7 @@ static int hashInit(HashTable *ht, unsigned int capcity) {
 static int hashInsert(HashTable *ht, HashEntry *entry) {
     assert(ht && entry);
 
-    int index = hashFunc(entry->key) % ht->capcity;
+    int index = hashFunc(entry->key) % ht->capacity;
     HashEntry *he = ht->datas[index];
     entry->next = he;
     ht->datas[index] = entry;
@@ -136,10 +137,10 @@ static int hashFreeEntry(HashTable *ht, HashEntry *he) {
 static int hashResize(HashTable *ht) {
     assert(ht);
 
-    int capacity = ht->capcity;
+    int capacity = ht->capacity;
     HashEntry **datas = ht->datas;
 
-    if (hashInit(ht, ht->capcity*2) != 0) {
+    if (hashInit(ht, ht->capacity*2) != 0) {
         //内存分配失败
         ht->datas = datas;
         return -1;
@@ -171,9 +172,9 @@ static int hashResize(HashTable *ht) {
  * @param  userptr
  * @return
  */
-int foreachDeleteEntry(const HashEntry *entry, void *userptr) {
+int foreachDeleteEntry(const void *key, void *val, void *userptr) {
     HashTable *ht = (HashTable *)userptr;
-    return hashRemove(ht, entry->key);
+    return hashRemove(ht, key);
 }
 
 /**
@@ -204,18 +205,16 @@ int hashDefaultCmp(const void *key1, const void *key2) {
 
 /**
  * 创建哈希表
- * @param  capcity [description]
+ * @param  capacity [description]
  * @return         [description]
  */
-HashTable * hashCreate(int capcity) {
+HashTable * hashCreate(int capacity) {
     HashTable *ht = (HashTable *)malloc(sizeof(*ht));
     if (!ht) {
         return NULL;
     }
 
-    ht->capcity = capcity;
-    ht->size = 0;
-    if (hashInit(ht, capcity) != 0) {
+    if (hashInit(ht, capacity) != 0) {
         free(ht);
         ht = NULL; //指针指空
         return NULL;
@@ -239,14 +238,14 @@ HashTable * hashCreate(int capcity) {
  */
 int hashSet(HashTable *ht, const void *key, const void *value) {
 
-    if ((ht->size / ht->capcity) >= 1) {
+    if ((ht->size / ht->capacity) >= HASH_RESIZE_RATIO) {
         if (hashResize(ht) != 0) {
             return -1;
         };
     }
 
     //查找原来是否有此元素
-    int index = hashFunc(key) % ht->capcity;
+    int index = hashFunc(key) % ht->capacity;
     HashEntry *he = ht->datas[index];
     while (he) {
         if (HASH_CMP_KEYS(ht, he->key, key)) {
@@ -279,7 +278,7 @@ int hashRemove(HashTable *ht, const void *key) {
     assert(ht && key);
 
     HashEntry *pre = NULL, *ptr = NULL;
-    int index = hashFunc(key) % ht->capcity;
+    int index = hashFunc(key) % ht->capacity;
 
     ptr = ht->datas[index];
     while (ptr) {
@@ -290,6 +289,7 @@ int hashRemove(HashTable *ht, const void *key) {
         ptr = ptr->next;
     }
 
+    // printf("%d %s %s\n", index, (char *)ptr->key, (char *)ptr->value);
     if (ptr) {
         if (pre) {
             pre->next = ptr->next;
@@ -311,7 +311,7 @@ int hashRemove(HashTable *ht, const void *key) {
  * @param key
  */
 void* hashGet(HashTable *ht, const void *key) {
-    int index = hashFunc(key) % ht->capcity;
+    int index = hashFunc(key) % ht->capacity;
 
     HashEntry *ptr = ht->datas[index];
     while (ptr) {
@@ -333,18 +333,19 @@ void* hashGet(HashTable *ht, const void *key) {
  * @param  foreach
  * @return         [description]
  */
-int hashForEach(HashTable *ht, int (*foreach)(const HashEntry *entry, void *userptr), void *userptr) {
+int hashForEach(HashTable *ht, int (*foreach)(const void *key, void *val, void *userptr), void *userptr) {
     assert(ht && foreach);
 
-    HashEntry *he = NULL;
-    for (int i = 0; i < ht->capcity; i++) {
+    HashEntry *he = NULL, *next = NULL;
+    for (int i = 0; i < ht->capacity; i++) {
         he = ht->datas[i];
         while (he) {
-            if (foreach(he, userptr) != 0) {
+            next = he->next;
+            if (foreach(he->key, he->value, userptr) != 0) {
                 return -1;
             }
             //TODO 可能有bug,因为Foreach可能执行删除函数
-            he = he->next;
+            he = next;
         }
     }
 
@@ -357,8 +358,8 @@ int hashForEach(HashTable *ht, int (*foreach)(const HashEntry *entry, void *user
  */
 void hashClear(HashTable *ht) {
     hashForEach(ht, foreachDeleteEntry, ht);
-    memset(ht->datas, 0, sizeof(HashEntry *)*ht->capcity);
-    ht->size = 0;
+    memset(ht->datas, 0, sizeof(HashEntry *)*ht->capacity);
+    // ht->size = 0;
 }
 
 /**
@@ -371,7 +372,7 @@ void hashDestroy(HashTable *ht) {
 
     ht->datas = NULL;
     ht->size = 0;
-    ht->capcity = 0;
+    ht->capacity = 0;
 
     ht->setKey = NULL;
     ht->setVal = NULL;
@@ -390,14 +391,26 @@ void hashFree(HashTable *ht) {
     ht = NULL;
 }
 
-static int hashDupEach(const HashEntry *he, void *userdata) {
+/**
+ * 复制哈希表的节点
+ * @param  key      [description]
+ * @param  val      [description]
+ * @param  userdata [description]
+ * @return          [description]
+ */
+static int hashDupEach(const void *key, void *val, void *userdata) {
     HashTable *ht = (HashTable *) userdata;
-    return hashSet(ht, he->key, he->value);
+    return hashSet(ht, key, val);
 }
 
 
+/**
+ * 复制一个新的哈希表
+ * @param  ht [description]
+ * @return    [description]
+ */
 HashTable *hashDuplicate(HashTable *ht) {
-    HashTable *htNew = hashCreate(ht->capcity);
+    HashTable *htNew = hashCreate(ht->capacity);
     if (!ht) {
         return NULL;
     }
@@ -425,6 +438,8 @@ void print_str(char *str) {
     printf("\n");
 }
 
+#ifdef __HASH_MAIN_TEST_
+
 int main() {
     char *str = "hello world";
     print_str(str);
@@ -443,3 +458,5 @@ int main() {
 
     return 0;
 }
+
+#endif

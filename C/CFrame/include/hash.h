@@ -2,8 +2,10 @@
 #define __HASH_H__
 
 //重新分配空间的大小比例
-const int HASH_RESIZE_RATIO = 1; //重新分配空间的比例
-const int HASH_INIT_SIZE = 32; //最小分配空间
+// const int HASH_RESIZE_RATIO = 1; //重新分配空间的比例
+// const int HASH_INIT_SIZE = 32; //最小分配空间
+#define HASH_INIT_SIZE 32
+#define HASH_RESIZE_RATIO 10
 
 //最什么没有给默认的set free 函数，因为不确定是否一定是可以用free释放的
 #define HASH_SET_SETKEY(ht, func) (ht)->setKey = (func)
@@ -54,7 +56,7 @@ typedef struct hashEntry {
 //hash 结构体
 typedef struct hash {
     HashEntry **datas;
-    unsigned int capcity; //
+    unsigned int capacity; //
     unsigned int size;    //长度
 
     int (*keyCmp) (const void *, const void *);
@@ -77,18 +79,18 @@ typedef struct hashIter {
 HashTable * hashCreate(int capcity);
 int hashSet(HashTable *ht, const void *key, const void *value);
 int hashRemove(HashTable *ht, const void *key);
-int hashForEach(HashTable *ht, int (*foreach)(const HashEntry *entry, void *userptr), void *userptr);
 void* hashGet(HashTable *ht, const void *key);
+int hashForEach(HashTable *ht, int (*foreach)(const void *key, void *val, void *userptr), void *userptr);
 void hashClear(HashTable *ht);   //清空所有数据
 void hashDestroy(HashTable *ht); //删除table
 void hashFree(HashTable *ht);    //
 HashTable *hashDuplicate(HashTable *ht);
 
-HashIter *hashIterCreate(HashTable *ht); //创建遍历
-int hashIterMoveNext(HashIter *iter);   //向后移动
-int hashIterMovePrev(HashIter *iter);   //向前移动
-int hashIterReset(HashIter *iter);      //重置位置
-void hashIterFree(HashIter *iter);      //释放
+// HashIter *hashIterCreate(HashTable *ht); //创建遍历
+// int hashIterMoveNext(HashIter *iter);   //向后移动
+// int hashIterMovePrev(HashIter *iter);   //向前移动
+// int hashIterReset(HashIter *iter);      //重置位置
+// void hashIterFree(HashIter *iter);      //释放
 
 //默认的key set 和free函数,默认都是作为字符串，free方式释放
 void *hashDefaultSet(const void *key);
