@@ -14,6 +14,9 @@ Target:
 
 问题:
 msd_hash.c 内存泄露: clear时
+1. def_free bug
+2. clear 使用free后的指针
+3. 
 
 
 

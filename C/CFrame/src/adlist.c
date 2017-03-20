@@ -292,7 +292,7 @@ void listRotate(list *adlist) {
  */
 listIter *listGetIterator(list *adlist, int direction) {
     listIter *iter = NULL;
-    if (NULL == (iter == malloc(sizeof(listIter)))) {
+    if (NULL == (iter = malloc(sizeof(listIter)))) {
         return NULL;
     }
 
@@ -313,7 +313,7 @@ listNode *listNext(listIter *iter ) {
         if (iter->direction == AL_START_HEAD) {
             iter->next = current->next;
         } else {
-            iter->prev = current->prev;
+            iter->next = current->prev;
         }
     }
 

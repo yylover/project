@@ -183,14 +183,16 @@ int foreachDeleteEntry(const void *key, void *val, void *userptr) {
  * @return     [description]
  */
 void *hashDefaultSet(const void *key) {
-    return strdup(key);
+    return strdup(key); //strdup 要free
 }
 /**
  * 默认的key 释放函数
  * @param key
  */
 void hashDefaultFree(void *key) {
-    free(key);
+    if (key) {
+        free(key);
+    }
 }
 
 /**
@@ -220,11 +222,11 @@ HashTable * hashCreate(int capacity) {
         return NULL;
     }
 
-    ht->keyCmp = hashDefaultCmp;
-    ht->setKey = hashDefaultSet;
-    ht->setVal = hashDefaultSet;
-    ht->freeKey = hashDefaultFree;
-    ht->freeVal = hashDefaultFree;
+    HASH_SET_SETKEY(ht, hashDefaultSet);
+    HASH_SET_SETVAL(ht, hashDefaultSet);
+    HASH_SET_FREEKEY(ht, hashDefaultFree);
+    HASH_SET_FREEVAL(ht, hashDefaultFree);
+    HASH_SET_KEYCMP(ht, hashDefaultCmp);
 
     return ht;
 }

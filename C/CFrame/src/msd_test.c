@@ -18,12 +18,12 @@ int indexOrg = 0;
 void *thread1(void *data) {
     while (1) {
         msd_hash_t *t = NULL;
-        for (int i = 0; i < 1000000; i++) {
+        for (int i = 0; i < 100000; i++) {
             char str[10];
             sprintf(str, "%d", i);
             pthread_mutex_lock(&mutex);
             t = (msd_hash_t *)(ht[indexOrg]);
-            msd_hash_insert((msd_hash_t *)t, str, str);
+            // msd_hash_insert((msd_hash_t *)t, str, str);
             // printf("%d\n", t->count);
 
             pthread_mutex_unlock(&mutex);
@@ -53,14 +53,14 @@ int main() {
     ht[0] = msd_hash_create(32);
     ht[1] = msd_hash_create(32);
 
-    MSD_HASH_SET_FREE_KEY(ht[0], NULL);
-    MSD_HASH_SET_FREE_VAL(ht[0], NULL);
+    MSD_HASH_SET_FREE_KEY(ht[0], msd_hash_def_free);
+    MSD_HASH_SET_FREE_VAL(ht[0], msd_hash_def_free);
     MSD_HASH_SET_SET_KEY(ht[0], msd_hash_def_set);
     MSD_HASH_SET_SET_VAL(ht[0], msd_hash_def_set);
     MSD_HASH_SET_KEYCMP(ht[0], msd_hash_def_cmp);
 
-    MSD_HASH_SET_FREE_KEY(ht[1], NULL);
-    MSD_HASH_SET_FREE_VAL(ht[1], NULL);
+    MSD_HASH_SET_FREE_KEY(ht[1], msd_hash_def_free);
+    MSD_HASH_SET_FREE_VAL(ht[1], msd_hash_def_free);
     MSD_HASH_SET_SET_KEY(ht[1], msd_hash_def_set);
     MSD_HASH_SET_SET_VAL(ht[1], msd_hash_def_set);
     MSD_HASH_SET_KEYCMP(ht[1], msd_hash_def_cmp);
@@ -69,9 +69,9 @@ int main() {
 
     pthread_t t[6];
 
-    // if (pthread_create(&t[0], NULL, thread1, ht) != 0) {
-    //     exit(0);
-    // }
+    if (pthread_create(&t[0], NULL, thread1, ht) != 0) {
+        exit(0);
+    }
     // //
     // if (pthread_create(&t[1], NULL, thread1, ht) != 0) {
     //     exit(0);
@@ -85,7 +85,7 @@ int main() {
     //     exit(0);
     // }
     // printf("线程创建成功\n");
-    // pthread_join(t[0], NULL);
+    pthread_join(t[0], NULL);
     // pthread_join(t[1], NULL);
     // pthread_join(t[2], NULL);
     // pthread_join(t[3], NULL);
