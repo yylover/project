@@ -5,8 +5,9 @@
 #include <google/cmockery.h>
 #include <stdio.h>
 
-#include "../include/adlist.h"
+#include "../include/hash.h"
 #include "../include/vector.h"
+#include "../include/adlist.h"
 
 void print(list *adlist) {
     listNode *node = adlist->head;
@@ -17,8 +18,8 @@ void print(list *adlist) {
 }
 
 void test_add(void **state) {
-    // assert_int_equal(add(3, 3), 6);
-    // assert_int_not_equal(add(3, 3), 5);
+    assert_int_equal(add(3, 3), 6);
+    assert_int_not_equal(add(3, 3), 5);
 }
 
 void test_listCreate() {
