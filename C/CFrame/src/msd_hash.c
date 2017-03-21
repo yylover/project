@@ -309,8 +309,7 @@ int msd_hash_foreach(msd_hash_t *ht,
                 // }
 
                 // printf("%s\n", he->val);
-                // he = next;
-                he = he->next;
+                he = next;
             }
         }
     }

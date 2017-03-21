@@ -16,10 +16,9 @@ Target:
 msd_hash.c 内存泄露: clear时
 1. def_free bug
 2. clear 使用free后的指针
-3. 
 
-
-
+1. 已经释放的空间继续访问是有不确定行为的。
+2. strdup 也需要free 释放.
 
 
 1. C语言类型

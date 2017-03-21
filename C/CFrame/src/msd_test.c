@@ -23,7 +23,7 @@ void *thread1(void *data) {
             sprintf(str, "%d", i);
             pthread_mutex_lock(&mutex);
             t = (msd_hash_t *)(ht[indexOrg]);
-            // msd_hash_insert((msd_hash_t *)t, str, str);
+            msd_hash_insert((msd_hash_t *)t, str, str);
             // printf("%d\n", t->count);
 
             pthread_mutex_unlock(&mutex);
@@ -73,29 +73,29 @@ int main() {
         exit(0);
     }
     // //
-    // if (pthread_create(&t[1], NULL, thread1, ht) != 0) {
-    //     exit(0);
-    // }
-    // //
-    // if (pthread_create(&t[2], NULL, thread1, ht) != 0) {
-    //     exit(0);
-    // }
-    //
-    // if (pthread_create(&t[3], NULL, pthread2, ht) != 0) {
-    //     exit(0);
-    // }
-    // printf("线程创建成功\n");
-    pthread_join(t[0], NULL);
-    // pthread_join(t[1], NULL);
-    // pthread_join(t[2], NULL);
-    // pthread_join(t[3], NULL);
-    // printf("exit\n");
-
-    for (int i = 0; i < 1000000; i++) {
-        char t[10];
-        sprintf(t, "%d", i);
-        msd_hash_insert(ht[0], t, t);
+    if (pthread_create(&t[1], NULL, thread1, ht) != 0) {
+        exit(0);
     }
+    //
+    if (pthread_create(&t[2], NULL, thread1, ht) != 0) {
+        exit(0);
+    }
+
+    if (pthread_create(&t[3], NULL, pthread2, ht) != 0) {
+        exit(0);
+    }
+    printf("线程创建成功\n");
+    pthread_join(t[0], NULL);
+    pthread_join(t[1], NULL);
+    pthread_join(t[2], NULL);
+    pthread_join(t[3], NULL);
+    printf("exit\n");
+
+    // for (int i = 0; i < 1000000; i++) {
+    //     char t[10];
+    //     sprintf(t, "%d", i);
+    //     msd_hash_insert(ht[0], t, t);
+    // }
 
     printf("%d\n", ht[0]->slots);
     printf("%d\n", ht[0]->count);

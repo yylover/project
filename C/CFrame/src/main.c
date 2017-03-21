@@ -53,13 +53,6 @@ int main() {
     ht[0] = hashCreate(32);
     ht[1] = hashCreate(32);
 
-    HASH_SET_FREEKEY(ht[0], NULL);
-    HASH_SET_FREEVAL(ht[0], NULL);
-    HASH_SET_FREEKEY(ht[1], NULL);
-    HASH_SET_FREEVAL(ht[1], NULL);
-
-
-
     pthread_t t[6];
 
     if (pthread_create(&t[0], NULL, thread1, ht) != 0) {
