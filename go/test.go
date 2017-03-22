@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	"time"
+)
+
 func threeSum(nums []int) [][]int {
 	var res [][]int
 	for i := 0; i < len(nums)-2; i++ {
@@ -16,5 +21,7 @@ func threeSum(nums []int) [][]int {
 }
 
 func main() {
+	t1 := time.Now()
+	fmt.Printf("%v", t1.Add(time.Second*20).Sub(t1))
 
 }
