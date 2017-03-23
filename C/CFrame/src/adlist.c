@@ -1,9 +1,19 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "../include/adlist.h"
+
+
+static void freeListNode(list *adlist, listNode *node) {
+    node->prev = NULL;
+    node->next = NULL;
+    if (adlist->free && node->value) {
+        adlist->free(node->value);
+    }
+    free(node);
+}
 
 
 /**
@@ -18,6 +28,7 @@ list *listCreate(void) {
     if ((adlist = malloc(sizeof(list))) == NULL) {
         return NULL;
     }
+    memset(adlist, 0, sizeof(list));
 
     adlist->length = 0;
     adlist->dup = NULL;
@@ -29,23 +40,31 @@ list *listCreate(void) {
 }
 
 /**
- * 释放链表
- * @param adlist 要释放的链表
+ * 清空dlist 数据
+ * @param adlist [description]
  */
-void listRelease(list *adlist) {
+void listClear(list *adlist) {
     listNode *node = listFirst(adlist);
 
     while (NULL != node) {
         listNode *temp = node;
         node = node->next;
 
-        temp->prev = NULL;
-        temp->next = NULL;
-        if (adlist->free) {
-            adlist->free(temp->value);
-        }
-        free(temp);
+        freeListNode(adlist, temp);
+        adlist->length --;
     }
+
+    adlist->head = NULL;
+    adlist->tail = NULL;
+    assert(adlist->length == 0);
+}
+
+/**
+ * 释放链表
+ * @param adlist 要释放的链表
+ */
+void listRelease(list *adlist) {
+    listClear(adlist);
 
     free(adlist);
 }
@@ -78,8 +97,9 @@ list *listDup(list *orgi) {
             value = node->value;
         }
 
-        if (listAddNodeTail(adlist, node->value) == NULL) {
+        if (listAddNodeTail(adlist, value) == NULL) {
             listRelease(adlist);
+            freeListNode(adlist, node);
             return NULL;
         }
         node = node->next;
@@ -272,6 +292,7 @@ listNode *listIndex(list *adlist, int index) {
  */
 void listRotate(list *adlist) {
     listNode *next = NULL, *prev = NULL;
+
     listNode *node = adlist->tail;
     adlist->tail = adlist->head;
     adlist->head = node;
@@ -321,22 +342,17 @@ listNode *listNext(listIter *iter ) {
 }
 
 void listReleaseIterator(listIter *iter) {
+    iter->next = NULL;
     free(iter);
 }
 
 void listRewind(list *adlist, listIter *iter) {
-    iter->next = adlist->head;
-    iter->direction = AL_START_HEAD;
-}
-void listRewindTail(list *adlist, listIter *iter) {
-    iter->next = adlist->tail;
-    iter->direction = AL_START_TAIL;
-}
+    if (iter->direction == AL_START_HEAD) {
+        iter->next = adlist->head;
+        iter->direction = AL_START_HEAD;
+    } else {
+        iter->next = adlist->tail;
+        iter->direction = AL_START_TAIL;
+    }
 
-// int main(int argc, char *argv[]) {
-//     int c = add(3, 5);
-//     // printf("%d\n", c);
-//     listCreate();
-//
-//     return 0;
-// }
+}

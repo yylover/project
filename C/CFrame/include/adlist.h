@@ -60,22 +60,22 @@ typedef struct list {
 
 //函数原型prototypes
 list *listCreate(void);
-void listRelease(list *);
+void listRelease(list *);      //清空数据
+void listClear(list *);        //只清空数据，不释放list 空间
 list *listDup(list *orgi);
 list *listAddNodeHead(list *, void *value);
 list *listAddNodeTail(list *, void *value);
 list *listInsertNode(list *, listNode* old, void *value, int after);
 void listDeleteNode(list *, listNode *node);
+
+
 listIter *listGetIterator(list *, int);
-listNode *listNext(listIter *);
 void listReleaseIterator(listIter *);
+listNode *listNext(listIter *);
+void listRewind(list *, listIter *);
 
 listNode *listSearchKey(list *, void *);
 listNode *listIndex(list *, int);
-void listRewind(list *, listIter *);
-void listRewindTail(list *, listIter *);
 void listRotate(list *);
-
-int add(int a, int b);
 
 #endif

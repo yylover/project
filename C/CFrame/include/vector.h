@@ -24,8 +24,6 @@ typedef struct vector {
     void *data; //数据数组
 } vector;
 
-
-
 typedef int (*vectorCmp)(const void *, const void *);
 typedef int (*vectorEachFunc)(void *, void *);
 
