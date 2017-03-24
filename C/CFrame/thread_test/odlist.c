@@ -19,7 +19,7 @@
  #include <stdio.h>
  #include <assert.h>
  #include <limits.h>
-#include "../include/odlist.h"
+#include "odlist.h"
 
 /**
  * 功能: Initialize a new list.

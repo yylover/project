@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "../include/odlist.h"
+#include "odlist.h"
 
 // int foreachDisplay(const msd_hash_entry_t *entry, void *userptr) {
     // printf("%s %s\n", (char *)entry->key, (char *)entry->val);
@@ -28,10 +28,10 @@ void *thread1(void *data) {
             sprintf(str, "%d", i);
             pthread_mutex_lock(&mutex);
             t = (msd_dlist_t *)(ht[indexOrg]);
-            Data *d = (Data *) calloc(1, sizeof(*d));
-            d->i = i;
-            d->str = strdup(str);
-            msd_dlist_add_node_tail(t, d);
+            // Data *d = (Data *) calloc(1, sizeof(*d));
+            // d->i = i;
+            // d->str = strdup(str);
+            msd_dlist_add_node_tail(t, str);
             // printf("%d\n", t->count);
 
             pthread_mutex_unlock(&mutex);
@@ -71,10 +71,12 @@ int main() {
     ht[1] = msd_dlist_init();
 
     // msd_dlist_set_dup(ht[0],  (void *)strdup);
-    msd_dlist_set_free(ht[0], freeData);
+    msd_dlist_set_free(ht[0], free);
+    msd_dlist_set_dup(ht[0], (void *)strdup);
 
     // msd_dlist_set_dup(ht[1],  (void *)strdup);
-    msd_dlist_set_free(ht[1], freeData);
+    msd_dlist_set_free(ht[1], free);
+    msd_dlist_set_dup(ht[1], (void *)strdup);
     // MSD_HASH_SET_FREE_KEY(ht[0], msd_hash_def_free);
     // MSD_HASH_SET_FREE_VAL(ht[0], msd_hash_def_free);
     // MSD_HASH_SET_SET_KEY(ht[0], msd_hash_def_set);
@@ -112,6 +114,8 @@ int main() {
     pthread_join(t[2], NULL);
     pthread_join(t[3], NULL);
     printf("exit\n");
+    msd_dlist_destroy(ht[0]);
+    msd_dlist_destroy(ht[1]);
 
     // for (int i = 0; i < 1000000; i++) {
     //     char t[10];

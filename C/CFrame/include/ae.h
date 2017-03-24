@@ -1,6 +1,4 @@
-
-
-#ifdef __AE_H__
+#ifndef __AE_H__
 #define __AE_H__
 
 #define AE_OK 0
@@ -27,11 +25,10 @@ typedef void aeEventFinalizerProc(struct aeEventLoop *eventloop, void *clientDat
 typedef void aeBeforeSleepProc(struct aeEventLoop *eventloop);
 
 typedef struct aeFileEvent {
-    //fd 是如何传递的
-    int maske;
+    int mask;               //fd 是如何传递的
     aeFileProc *rFileProc;  //读时间处理函数
     aeFileProc *wFileProc;  //写事件处理函数
-    void *clientData;// TODO 有bug,可能会造成数据覆盖?
+    void *clientData;       //TODO 有bug,可能会造成数据覆盖?
 } aeFileEvent;
 
 typedef struct aeTimeEvent {
@@ -51,10 +48,11 @@ typedef struct aeFiredEvent {
 } aeFiredEvent;
 
 typedef struct aeEventLoop {
-    int maxfd; //最大的文件描述符
-    int setsize; //文件描述符追踪的个数?
-    long long timeEventNextId; //
-    time_t lastTime;
+    int        maxfd; //最大的文件描述符
+    int        setsize; //文件描述符追踪的个数?
+    long long  timeEventNextId; //
+    time_t     lastTime;
+
     aeFileEvent *event;
     aeFiredEvent *fired;
     aeTimeEvent *timeEventHead;

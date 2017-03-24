@@ -49,6 +49,7 @@ int logInit(const char *dir, const char *filename, int level, int size, int logN
  */
 int logWrite(int level, const char *fmt, ...) {
 
+    // vasprint
 }
 
 /**
