@@ -18,14 +18,20 @@
 
 // extern instance_t *g_ins;
 
-static int threadWorkerCreate(threadPool *pool, void *(*worker_task)(void *arg), int idx);
+static int threadWorkerCreate(threadPool *pool, void *(*workerTask)(void *arg), int idx);
 static int threadWorkerDestroy(threadWorker *worker);
 static void threadWorkerProcessNotify(struct aeEventLoop *el, int fd, void *clientdata, int mask);
 static void readFromClient(aeEventLoop *el, int fd, void *priv_data, int mask);
-static int workerCron(aeEventLoop *el, long long id, void *priv_data);
-static void threadWorkerShutdown(thread_worker_t *worker);
+// static int workerCron(aeEventLoop *el, long long id, void *priv_data);
+static void threadWorkerShutdown(threadWorker *worker);
 
 
+/**
+ * 创建工作线程
+ * @param  pool       线程池句柄
+ * @param  workerTask 线程工作函数
+ * @return
+ */
 static int threadWorkerCreate(threadPool *pool, void *(*workerTask)(void *arg), int idx) {
     assert(pool != NULL && workerTask != NULL);
 
@@ -61,8 +67,15 @@ static int threadWorkerCreate(threadPool *pool, void *(*workerTask)(void *arg), 
     return 0;
 }
 
+/**
+ * 线程池创建
+ * @param  workerNum  工作线程数
+ * @param  stackSize  栈大小
+ * @param  workerTask 工作线程函数
+ * @return            NULL| threadPool *
+ */
 threadPool *threadPoolCreate(int workerNum, int stackSize, void* (*workerTask)(void *arg)) {
-    assert(worker_num > 0 && stack_size > 0);
+    assert(workerNum > 0 && stackSize > 0);
 
     threadPool *pool = NULL;
     if (NULL == (poll = calloc(1, sizeof(*poll)))) {
@@ -97,19 +110,19 @@ threadPool *threadPoolCreate(int workerNum, int stackSize, void* (*workerTask)(v
  * @param  pool [description]
  * @return      [description]
  */
-int threadPollDestroy(thread_pool_t *pool) {
+int threadPollDestroy(threadPool *pool); {
     assert(pool != NULL);
 
+    //
     int i = 0;
-    for (; i < pool->worker_num; i++) {
-        threadWorker *worker = pool->thread_workers[i];
+    for (; i < pool->threadWorkerNum; i++) {
+        threadWorker *worker = pool->threadWorkers[i];
         if (worker) {
             threadWorkerDestroy(worker);
         }
     }
     //解锁
 
-    //释放锁
     free(pool->threadWorkers);
     free(pool);
 
@@ -160,6 +173,6 @@ void *threadWorkerCycle(void *arg) {
 
 }
 
-void writeToClient(aeEventLoop *el, int fd, void *privdata, int mask) {
+// void writeToClient(aeEventLoop *el, int fd, void *privdata, int mask) {
 
-}
+// }

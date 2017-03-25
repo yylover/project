@@ -4,11 +4,11 @@
 #include <errno.h>
 #include <string.h>
 #include <poll.h>
-#include <stdib.h>
+#include <stdlib.h>
 #include <sys/time.h>
 #include <sys/types.h>
 
-#include "../src/ae.h"
+#include "../include/ae.h"
 
 //包含当前系统支持的最大效率的ip复用方式,下面根据运行效率倒序排列
 #ifdef HAVE_EVPORT
