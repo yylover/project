@@ -16,7 +16,7 @@
 #define AE_NOMORE -1
 
 //宏定义，仅仅为了去掉警告？
-// #define AE_NOTUSED(V) ((void) V)
+#define AE_NOTUSED(V) ((void) V)
 
 struct aeEventLoop;
 //文件时间处理逻辑

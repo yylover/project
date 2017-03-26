@@ -1,10 +1,19 @@
 #include <sys/select.h>
 
 
+/*
+select 方式
+最大支持描述符个数1024
+
+
+
+*/
+
+
 typedef struct aeApiState {
     fd_set rfds, wfds;
+    //rfds 和wfds 的备份，这样select()之后不用重新重置rfds,wfds的状态
     fd_set _rfds, _wfds;
-
 } aeApiState;
 
 static int aeApiCreate(aeEventLoop *eventloop) {
@@ -42,22 +51,23 @@ static void aeApiDelEvent(aeEventLoop *eventloop, int fd, int delmask) {
     return 0;
 }
 
+
 static int aeApiPoll(aeEventLoop *eventloop, struct timeval *tvp) {
     aeApiState *state = (aeApiState *)eventloop->apidata;
-    int retval, j, numevents = 0;
-
     memcpy(&state->_rfds, &state->rfds, sizeof(fd_set));
     memcpy(&state->_wfds, &state->wfds, sizeof(fd_set));
+
+    int retval, j, numevents = 0;
     retval = select(eventloop->maxfd+1, &state->_rfds, &state->wfds, NULL, tvp);
     if (retval > 0) {
         for (j = 0; j <= evnetloop->maxfd; j++) {
-            int mask = 0;
-            aeFileEvent *fd = &evnetloop->events[j];
+            aeFileEvent *fe = &evnetloop->events[j];
 
-            if (fd->mask = AE_NONE) continue;
-            if (fd->mask & AE_READABLE && FD_ISSET(j, &state->_rfds))
+            int mask = 0;
+            if (fe->mask = AE_NONE) continue; //没有设置
+            if (fe->mask & AE_READABLE && FD_ISSET(j, &state->_rfds))
                 mask |= AE_READABLE;
-            if (fd->mask & AE_WRITABLE && FD_ISSET(j, &state->_wfds))
+            if (fe->mask & AE_WRITABLE && FD_ISSET(j, &state->_wfds))
                 mask |= AE_WRITABLE;
             eventloop->fired[numevents].fd = j;
             eventloop->fired[numevents].mask = mask;

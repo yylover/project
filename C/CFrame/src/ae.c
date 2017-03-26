@@ -40,7 +40,7 @@ aeEventLoop* aeCreateEventloop(int setSize) {
 
     eventloop->maxfd = -1;
     evnetloop->setSize = setSize;
-    eventloop->lastTime = time(NULL); //?
+    eventloop->lastTime = time(NULL); //当前时间戳
     eventloop->timeEventHead = NULL;
     eventloop->timeEventNextId = 0;//从0开始
     eventloop->stop = 0;
@@ -311,7 +311,7 @@ int aeProcessEvents(aeEventLoop *eventloop, int flags) {
             if (tvp->tv_usec < 0) tvp->tv_usec = 0;
 
         } else {
-            if (flags & AE_DONT_WAIT) {//不能阻塞,ASAP
+            if (flags & AE_DONT_WAIT) {//不能阻塞,return ASAP
                 tv.tv_sec = tv.tv_usec = 0;
                 tvp = &tv;
             } else { //可以阻塞
