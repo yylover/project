@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,7 +14,7 @@
 #include "../include/anet.h"
 
 int anetSetError(char *err, const char *fmt, ...) {
-    if (!fmt || err == NULL) {
+    if (!fmt || !err) {
         return ANET_ERR;
     }
 
@@ -37,16 +36,39 @@ int anetSetError(char *err, const char *fmt, ...) {
  */
 static int anetSetReuseAddr(char *err, int fd) {
     int yes = 1;
-    // printf("%d %d %lu\n", fd, yes, sizeof(yes));
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) {
         anetSetError(err, "setsockopt SO_REUSEADDR failed :%s", strerror(errno));
+        close(fd);
         return ANET_ERR;
     }
 
     return ANET_OK;
 }
 
-static int anetCreateSocket(char *err, int domain) {
+/**
+ * 对socket fd 设置IPV6_V6ONLY选项
+ * @param  err 错误提示
+ * @param  fd
+ * @return
+ */
+static int anetSetIPV6Only(char *err, int fd) {
+    int yes = 1;
+    if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &yes, sizeof(yes)) == -1) {
+        anetSetError(err, "setsockopt IPV6_V6ONLY failed :%s", strerror(errno));
+        close(fd);
+        return ANET_ERR;
+    }
+
+    return ANET_OK;
+}
+
+/**
+ * 创建TCPsocket
+ * @param  err    char []
+ * @param  domain AF_INET(IPV4)、AF_INET6(IPV6)、AF_LOCAL
+ * @return        [description]
+ */
+static int anetCreateTCPSocket(char *err, int domain) {
     int sock = socket(domain, SOCK_STREAM, 0);
     if (sock < 0) {
         anetSetError(err, "Create socket failed :%s", strerror(errno));
@@ -55,37 +77,101 @@ static int anetCreateSocket(char *err, int domain) {
 
     //设置重用选项，可以多次close/open同一个socket
     if (ANET_ERR == anetSetReuseAddr(err, sock)) {
-        close(sock);
         return ANET_ERR;
     }
     return sock;
 }
 
-static int anetListen(char *err, int s, struct sockaddr *addr, socklen_t len, int backlog) {
-    if (bind(s, addr, len) == -1) {
-        close(s);
-        anetSetError(err, "bind failed:%s", strerror(errno));
+/**
+ * 是否关闭Nagles算法
+ * @param  err     错误描述
+ * @param  fd      文件描述符
+ * @param  nodelay 1关闭，0开启
+ * @return
+ */
+static int anetSetTcpNoDelay(char *err, int fd, int nodelay) {
+    if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay)) == -1) {
+        anetSetError(err, "setsockopt TCP_NODELAY failed :%s", strerror(errno));
         return ANET_ERR;
     }
 
-    if (listen(s, backlog)) {
+    return ANET_OK;
+}
+
+int anetEnableTcpNoDelay(char *err, int fd) {
+    return anetSetTcpNoDelay(err, fd, 1);
+}
+
+int anetDisableTcpNoDelay(char *err, int fd) {
+    return anetSetTcpNoDelay(err, fd, 0);
+}
+
+int anetTcpKeepAlive(char *err, int fd) {
+    int keepalive = 1;
+    if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &keepalive, sizeof(keepalive)) == -1) {
+        anetSetError(err, "setsockopt SO_KEEPALIVE failed :%s", strerror(errno));
+        return ANET_ERR;
+    }
+
+    return ANET_OK;
+}
+
+int anetSendTimeout(char *err, int fd, long long ms) {
+    struct timeval tv;
+    tv.tv_sec = ms / 1000;
+    tv.tv_usec = (ms - tv.tv_sec*1000)*1000;
+
+    if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) == -1) {
+        anetSetError(err, "setsockopt SO_SNDTIMEO failed :%s", strerror(errno));
+        return ANET_ERR;
+    }
+
+    return ANET_OK;
+}
+
+/**
+ * 对socket 进行命名和监听
+ * @param  err     错误提示
+ * @param  s       绑定socket
+ * @param  addr    绑定地址
+ * @param  len     socket长度
+ * @param  backlog 最大socket连接数
+ * @return         [description]
+ */
+static int anetListen(char *err, int s, struct sockaddr *addr, socklen_t len, int backlog) {
+    if (-1 == bind(s, addr, len)) { //命名端口号
+        anetSetError(err, "bind failed:%s", strerror(errno));
         close(s);
-        anetSetError(err, "listen failed", strerror(errno));
+        return ANET_ERR;
+    }
+
+    if (-1 == listen(s, backlog)) { //
+        anetSetError(err, "listen failed:%s", strerror(errno));
+        close(s);
         return ANET_ERR;
     }
     return ANET_OK;
 }
 
+/**
+ * 创建TCPServer
+ * @param  err      错误提示
+ * @param  port     端口号
+ * @param  bindaddr 绑定地址
+ * @param  af       协议族 AF_INET | AF_INET6 |
+ * @param  backlog  最大连接数
+ * @return
+ */
 static int _anetTcpServer(char *err, int port, char *bindaddr, int af, int backlog) {
     char _port[6];
     int rv, sock;
-    struct addrinfo hints, *serverinfo, *p;
+    struct addrinfo hints, *serverinfo = NULL, *p = NULL;
 
     snprintf(_port, 6, "%d", port);
-    memset(&hints, '\0', sizeof(hints));
-    hints.ai_family = af;       //协议族
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family   = af;          //协议族
     hints.ai_socktype = SOCK_STREAM; //TCP
-    hints.ai_flags = AI_PASSIVE; //是否将取得的socket地址用于被动打开。
+    hints.ai_flags    = AI_PASSIVE; //是否将取得的socket地址用于被动打开。
 
     if ((rv = getaddrinfo(bindaddr, _port, &hints, &serverinfo)) != 0) {
         anetSetError(err, "getaddrinfo failed %s", gai_strerror(rv));
@@ -97,7 +183,10 @@ static int _anetTcpServer(char *err, int port, char *bindaddr, int af, int backl
             continue;
         }
 
-        //TODO IPV6 判断
+        // IPV6 判断
+        if (af == AF_INET6 && (anetSetIPV6Only(err, sock) == ANET_ERR)) {
+            return ANET_ERR;
+        }
 
         if (anetSetReuseAddr(err, sock) == ANET_ERR) {
             return ANET_ERR;
@@ -119,6 +208,15 @@ static int _anetTcpServer(char *err, int port, char *bindaddr, int af, int backl
     return sock;
 }
 
+int anetTcpServer(char *err, int port, char *bindaddr, int backlog) {
+    return _anetTcpServer(err, port, bindaddr, AF_INET, backlog);
+}
+
+int anetTcp6Server(char *err, int port, char *bindaddr, int backlog) {
+    return _anetTcpServer(err, port, bindaddr, AF_INET6, backlog);
+}
+
+
 static int anetGenericAccept(char *err, int sock, struct sockaddr *sa, socklen_t *len) {
     int fd;
     while (1) {
@@ -135,16 +233,10 @@ static int anetGenericAccept(char *err, int sock, struct sockaddr *sa, socklen_t
     return fd;
 }
 
-int anetTcpServer(char *err, int port, char *bindaddr, int backlog) {
-    return _anetTcpServer(err, port, bindaddr, AF_INET, backlog);
-}
-
-int anetTcp6Server(char *err, int port, char *bindaddr, int backlog) {
-    return _anetTcpServer(err, port, bindaddr, AF_INET6, backlog);
-}
-
 /**
- * 接收TCP socket连接，使用通用的struct sockaddr_storage结构接收，用以兼容IPV4, IPV6
+ * 接收TCP socket连接，使用通用的struct sockaddr_storage结构接收，用以兼容IPV4,
+ * IPV6,并返回对端的IP和端口号
+ *
  *
  * @param  err        错误提示
  * @param  serversock socket fd
@@ -160,7 +252,6 @@ int anetTcpAccept(char *err, int serversock, char *ip, size_t ip_len, int *port)
     struct sockaddr_storage sa;
     socklen_t len;
     if ((fd = anetGenericAccept(err, serversock, (struct sockaddr*)&sa, &len)) == ANET_ERR) {
-        close(serversock);
         return ANET_ERR;
     }
 
@@ -222,59 +313,14 @@ int anetNonBlock(char *err, int fd) {
     return anetSetSocketBlock(err, fd, 0);
 }
 
-/**
- * 是否关闭Nagles算法
- * @param  err     错误描述
- * @param  fd      文件描述符
- * @param  nodelay 1关闭，0开启
- * @return
- */
-static int anetSetTcpNoDelay(char *err, int fd, int nodelay) {
-    if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay)) == -1) {
-        anetSetError(err, "setsockopt TCP_NODELAY failed :%s", strerror(errno));
-        return ANET_ERR;
-    }
 
-    return ANET_OK;
-}
-
-int anetEnableTcpNoDelay(char *err, int fd) {
-    return anetSetTcpNoDelay(err, fd, 1);
-}
-
-int anetDisableTcpNoDelay(char *err, int fd) {
-    return anetSetTcpNoDelay(err, fd, 0);
-}
-
-int anetTcpKeepAlive(char *err, int fd) {
-    int keepalive = 1;
-    if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &keepalive, sizeof(keepalive)) == -1) {
-        anetSetError(err, "setsockopt SO_KEEPALIVE failed :%s", strerror(errno));
-        return ANET_ERR;
-    }
-
-    return ANET_OK;
-}
-
-int anetSendTimeout(char *err, int fd, long long ms) {
-    struct timeval tv;
-    tv.tv_sec = ms / 1000;
-    tv.tv_usec = (ms - tv.tv_sec*1000)*1000;
-
-    if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) == -1) {
-        anetSetError(err, "setsockopt SO_SNDTIMEO failed :%s", strerror(errno));
-        return ANET_ERR;
-    }
-
-    return ANET_OK;
-}
 
 #define ANET_CONNECT_NONE 0         //连接
 #define ANET_CONNECT_NONBLOCK 1     //非阻塞连接
 #define ANET_CONNECT_BE_BINDING 2   //最大努力binding
 /**
  * TCP发起socket连接
- * TODO bind 端口号是啥意思
+ *  bind 端口号是啥意思
  * @param  err         错误描述
  * @param  addr        地址
  * @param  port        端口号
@@ -289,7 +335,8 @@ static int anetTcpGenericConnect(char *err, char *addr, int port, char *source_a
 
     snprintf(_port, 6, "%d", port);
     memset(&hints, '\0', sizeof(hints));
-    hints.ai_family = AF_UNSPEC;     //AF_UNSPEC则意味着函数返回的是适用于指定主机名和服务名且适合任何协议族的地址。
+    //AF_UNSPEC则意味着函数返回的是适用于指定主机名和服务名且适合任何协议族的地址。
+    hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM; //TCP
 
     if ((rv = getaddrinfo(addr, _port, &hints, &serverinfo)) != 0) {
@@ -311,7 +358,7 @@ static int anetTcpGenericConnect(char *err, char *addr, int port, char *source_a
             goto error;
         }
 
-        //TODO 为啥绑地址
+        //TODO 为啥绑地址 ???
         if (source_addr) {
             int bound = 0;
             if ((rv = getaddrinfo(source_addr, NULL, &hints, &bserverinfo)) != 0) {
@@ -334,7 +381,7 @@ static int anetTcpGenericConnect(char *err, char *addr, int port, char *source_a
         }
 
         if (connect(sock, p->ai_addr, p->ai_addrlen) == -1) {
-            //非阻塞连接，直接goto end
+            //非阻塞连接，EINPROGRESS 是正常的状态，尝试重新连接直接goto end
             if (errno == EINPROGRESS && flags & ANET_CONNECT_NONBLOCK)
                 goto end;
             close(sock);
@@ -389,14 +436,14 @@ int anetRead(int fd, char *buf, int count) {
     int nread, totlen = 0;
     while (totlen < count) {
         nread = read(fd, buf, count-totlen);
-        if (nread == 0) {// 读取完成
+        if (nread == 0) {  // 读取完成
             return totlen;
         }
-        if (nread == -1) {
+        if (nread == -1) { //读错误
             return -1;
         }
-        totlen += nread;
-        buf += nread;
+        totlen += nread;   // 已读个数增加
+        buf += nread;      //指针向后移动
     }
     return totlen;
 }
@@ -426,7 +473,7 @@ int anetWrite(int fd, char *buf, int count) {
 }
 
 /**
- * 获取socket对端的ip地址和端口号，
+ * 获取socket对端的ip地址和端口号
  * @param  fd     [description]
  * @param  ip     [description]
  * @param  ip_len [description]

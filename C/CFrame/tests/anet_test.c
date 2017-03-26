@@ -19,9 +19,13 @@
 void test_setError(void **state) {
     char buf[128];
 
-    //
+    //anetSetError错误提示
     anetSetError(buf, "This is %s and %d", "yang", 156);
     assert_string_equal(buf, "This is yang and 156");
+}
+
+void test_socketOption(void **state) {
+    char buf[128];
 
     //创建socket
     int sock = anetTcpServer(NULL, 8000, "127.0.0.1", 5);
@@ -58,15 +62,6 @@ void test_setError(void **state) {
     assert_int_equal(tv.tv_usec, 8000);
     printf("%ld %d\n", tv.tv_sec, tv.tv_usec);
 
-
-    //accept test
-    char ip[128];
-    int port = 0;
-    res = anetTcpAccept(NULL, sock, ip, sizeof(ip), &port);
-    assert_int_equal(res, 0);
-    assert_string_equal("127.0.0.1", ip);
-    printf("%s %d\n", ip, port);
-
     //阻塞和非阻塞判断
     anetNonBlock(NULL, sock);
     int flags = fcntl(sock, F_GETFL);
@@ -75,6 +70,22 @@ void test_setError(void **state) {
     flags = fcntl(sock, F_GETFL);
     assert_true((flags & O_NONBLOCK) == 0);
 
+    close(sock);
+}
+
+
+void test_socketServer(void **state) {
+    char buf[128];
+    int sock = anetTcpServer(NULL, 8000, "127.0.0.1", 5);
+    assert_true(sock > 2);
+
+    //accept test
+    char ip[128];
+    int port = 0;
+    int res = anetTcpAccept(NULL, sock, ip, sizeof(ip), &port);
+    assert_int_equal(res, 0);
+    assert_string_equal("127.0.0.1", ip);
+    printf("%s %d\n", ip, port);
     //
     close(sock);
 
@@ -90,6 +101,8 @@ void test_anetTcpAccept(void **state) {
 int main(int argc, char* argv[]) {
     const UnitTest tests[] = {
         unit_test(test_setError),
+        unit_test(test_socketOption),
+        unit_test(test_socketServer),
     };
     return run_tests(tests);
 }

@@ -28,7 +28,7 @@ Nagle算法的基本定义是任意时刻，最多只能有一个未被确认的
 4. Unix Server connect 暂时没有写
 5.
 
-*****************************************************************************/
+*************************************************************************/
 
 
 #ifndef __ANET_H_
@@ -44,8 +44,8 @@ int anetTcpConnect(char *err, char *addr, int port);
 int anetTcpNonblockConnect(char *err, char *addr, int port);
 int anetTcpNonblockBindConnect(char *err, char *addr, int port, char *souceaddr);
 int anetTcpNonBlockBestEffortBindConnect(char *err, char *addr, int port, char *source_addr);
-int anetUnixConnect(char *err, char *path);
-int anetUnixNonblockConnect(char *err, char *path);
+// int anetUnixConnect(char *err, char *path);
+// int anetUnixNonblockConnect(char *err, char *path);
 
 int anetRead(int fd, char *buf, int count);
 int anetWrite(int fd, char *buf, int count);
@@ -54,21 +54,21 @@ int anetResolveIP(char *err, char *host, char *buf, int count);
 
 int anetTcpServer(char *err, int port, char *bindaddr, int backlog);
 int anetTcp6Server(char *err, int port, char *bindaddr, int backlog);
-// int anetUnitxServer(char *err, char *path, mode_t perm, int backlog);
+// int anetUnixServer(char *err, char *path, mode_t perm, int backlog);
 
-int anetTcpAccept(char *err, int serversock, char *ip, size_t ip_len, int *port);
-int anetUnixAccept(char *err, int serversock);
+int anetTcpAccept(char *err, int serversock, char *ip, size_t ip_len, int *port); //接收
+// int anetUnixAccept(char *err, int serversock); //unix 接收
 
-int anetBlock(char *err, int fd);
-int anetNonBlock(char *err, int fd);
-int anetEnableTcpNoDelay(char *err, int fd);
-int anetDisableTcpNoDelay(char *err, int fd);
-int anetTcpKeepAlive(char *err, int fd);
-int anetKeepAlive(char *err, int fd, int interval);
-int anetSendTimeout(char *err, int fd, long long ms);
+int anetBlock(char *err, int fd); //阻塞
+int anetNonBlock(char *err, int fd); //非阻塞
+int anetEnableTcpNoDelay(char *err, int fd);  //启动TCPNoDelay算法
+int anetDisableTcpNoDelay(char *err, int fd); //关闭TCPNodelay算法
+int anetTcpKeepAlive(char *err, int fd);      // TCPAlive
+int anetKeepAlive(char *err, int fd, int interval);   //
+int anetSendTimeout(char *err, int fd, long long ms); //设置发送超时时间
 
-int anetPeerToString(int fd, char *ip, size_t ip_len, int *port);
-int anetSockname(int fd, char *ip, size_t ip_len, int *port);
+int anetPeerToString(int fd, char *ip, size_t ip_len, int *port); //
+int anetSockname(int fd, char *ip, size_t ip_len, int *port);    //
 
 
 #endif
