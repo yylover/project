@@ -17,6 +17,8 @@ vector结构和操作逻辑声明:
 #ifndef __VECTOR_H_
 #define __VECTOR_H_
 
+#define VECTOR_MIN_SIZE 16
+
 typedef struct vector {
     unsigned int slots; //槽位容量
     unsigned int count; //已经使用总数

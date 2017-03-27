@@ -23,6 +23,7 @@ static int aeApiCreate(aeEventLoop *eventloop) {
     FD_ZERO(&state->rfds);
     FD_ZERO(&state->wfds);
     eventloop->apidata = state;
+    return 0;
 }
 
 //仅判断是否超出
@@ -33,6 +34,7 @@ static int aeApiResize(aeEventLoop *eventloop, int setSize) {
 
 static int aeApiFree(aeEventLoop *eventloop) {
     free(eventloop->apidata);
+    return 0;
 }
 
 static int aeApiAddEvent(aeEventLoop *eventloop, int fd, int mask) {
@@ -48,7 +50,6 @@ static void aeApiDelEvent(aeEventLoop *eventloop, int fd, int delmask) {
 
     if (delmask & AE_READABLE) FD_CLR(fd, &state->rfds);
     if (delmask & AE_WRITABLE) FD_CLR(fd, &state->wfds);
-    return 0;
 }
 
 
@@ -60,11 +61,11 @@ static int aeApiPoll(aeEventLoop *eventloop, struct timeval *tvp) {
     int retval, j, numevents = 0;
     retval = select(eventloop->maxfd+1, &state->_rfds, &state->wfds, NULL, tvp);
     if (retval > 0) {
-        for (j = 0; j <= evnetloop->maxfd; j++) {
-            aeFileEvent *fe = &evnetloop->events[j];
+        for (j = 0; j <= eventloop->maxfd; j++) {
+            aeFileEvent *fe = &eventloop->events[j];
 
             int mask = 0;
-            if (fe->mask = AE_NONE) continue; //没有设置
+            if (fe->mask == AE_NONE) continue; //没有设置
             if (fe->mask & AE_READABLE && FD_ISSET(j, &state->_rfds))
                 mask |= AE_READABLE;
             if (fe->mask & AE_WRITABLE && FD_ISSET(j, &state->_wfds))

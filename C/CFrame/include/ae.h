@@ -1,10 +1,11 @@
 #ifndef __AE_H__
 #define __AE_H__
+#include <time.h>
 
 #define AE_OK 0
 #define AE_ERR -1
 
-#define AE_NODE 0
+#define AE_NONE 0
 #define AE_READABLE 1
 #define AE_WRITABLE 2
 
@@ -74,7 +75,7 @@ int aeCreateFileEvent(aeEventLoop *eventloop, int fd, int mask, aeFileProc *proc
 void aeDeleteFileEvent(aeEventLoop *eventloop, int fd, int mask); //删除
 int aeGetFileEvents(aeEventLoop *eventloop, int fd);
 
-int aeCreateTimeEvent(aeEventLoop *eventloop, long long id, long long milliseconds, aeTimeProc *proc, void *clientData, aeEventFinalizerProc *finalizerProc);
+int aeCreateTimeEvent(aeEventLoop *eventloop, long long milliseconds, aeTimeProc *proc, void *clientData, aeEventFinalizerProc *finalizerProc);
 void aeDeleteTimeEvent(aeEventLoop *eventloop, long long id);
 
 int aeProcessEvents(aeEventLoop *eventloop, int flags);

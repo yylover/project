@@ -10,7 +10,7 @@
 
 /**
  * 对vectro进行扩展，容量是原来的两倍大小
- * TODO calloc 原值和返回值是否相同?
+ * calloc 原值和返回值是否相同?
  * @param  v 要扩容的vector
  * @return   -1 | 0
  */
@@ -26,6 +26,10 @@ static int vectorResize(vector *v) {
 }
 
 vector *vectorCreate(unsigned int slots, unsigned int sizeElem) {
+    if (slots <= 0) {
+        slots = VECTOR_MIN_SIZE;
+    }
+
     vector *v = NULL;
     if (NULL == (v = malloc(sizeof(vector)))) {
         return NULL;
@@ -44,10 +48,7 @@ vector *vectorCreate(unsigned int slots, unsigned int sizeElem) {
 
 void vectorFree(vector *v) {
     if (v) {
-        if (v->data) {
-            free(v->data);
-        }
-
+        free(v->data);
         free(v);
     }
 }
@@ -60,7 +61,7 @@ void vectorFree(vector *v) {
  * @return       [description]
  */
 int vectorSetAt(vector *v, unsigned int index, void *elem) {
-    if (index > v->slots -1) {
+    while (index >= v->slots) { //扩容
         if (vectorResize(v) == -1) {
             return -1;
         }
@@ -73,11 +74,12 @@ int vectorSetAt(vector *v, unsigned int index, void *elem) {
         v->count = index +1;
     }
 
+
     return 0;
 }
 
 void *vectorGetAt(vector *v, unsigned int index) {
-    if (index > v->slots -1) {
+    if (index > v->slots-1) {
         return NULL;
     }
 
@@ -86,7 +88,9 @@ void *vectorGetAt(vector *v, unsigned int index) {
 
 int vectorPush(vector *v, void *elem) {
     if (v->count == v->slots) {
-        vectorResize(v);
+        if (vectorResize(v) != 0) {
+            return -1;
+        }
     }
 
     return vectorSetAt(v, v->count, elem);
@@ -104,7 +108,7 @@ void *vectorPop(vector *v) {
     }
 
     v->count--;
-    return v->data + v->sizeElem*v->count;
+    return v->data + v->sizeElem*v->count; //没有置空
 }
 
 /**

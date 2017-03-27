@@ -273,7 +273,7 @@ int anetTcpAccept(char *err, int serversock, char *ip, size_t ip_len, int *port)
         }
     }
 
-    return ANET_OK;
+    return fd;
 }
 
 /**

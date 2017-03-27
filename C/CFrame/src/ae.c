@@ -39,7 +39,7 @@ aeEventLoop* aeCreateEventloop(int setSize) {
     }
 
     eventloop->maxfd = -1;
-    evnetloop->setSize = setSize;
+    eventloop->setsize = setSize;
     eventloop->lastTime = time(NULL); //当前时间戳
     eventloop->timeEventHead = NULL;
     eventloop->timeEventNextId = 0;//从0开始
@@ -51,8 +51,8 @@ aeEventLoop* aeCreateEventloop(int setSize) {
     }
 
     int i;
-    for (i = 0; i < setsize; i++) {
-        eventloop->events[i].mask = AE_NODE;
+    for (i = 0; i < setSize; i++) {
+        eventloop->events[i].mask = AE_NONE;
     }
 
     return eventloop;
@@ -66,27 +66,28 @@ err:
 }
 
 void aeStop(aeEventLoop *eventloop) {
-    eventloop.stop = 1;
+    eventloop->stop = 1;
 }
 
 int aeGetSetSize(aeEventLoop *eventloop) {
-    return eventloop->setSize;
+    return eventloop->setsize;
 }
 
 int aeResizeSetSize(aeEventLoop *eventloop, int setSize) {
-    if (setSize == eventloop->setSize) return AE_OK;
+    if (setSize == eventloop->setsize) return AE_OK;
     if (setSize <= eventloop->maxfd) return AE_ERR;
     if (aeApiResize(eventloop, setSize) == AE_ERR) {
         return AE_ERR;
     }
 
-    eventloop->events = realloc(eventloop->events, sizeof(aeFileEvent) * SetSize);
-    eventloop->fired = realloc(eventloop->fired, sizeof(aeTimeEvent) * SetSize);
-    eventLoop->setsize = setsize;
+    eventloop->events = realloc(eventloop->events, sizeof(aeFileEvent) * setSize);
+    eventloop->fired = realloc(eventloop->fired, sizeof(aeTimeEvent) * setSize);
+    eventloop->setsize = setSize;
 
     //确保新初始化的events 赋值为AE_NORE mask
-    for (i = eventLoop->maxfd+1; i < setSize; i++) {
-        eventloop->events[i].make = AE_NODE;
+    int i ;
+    for (i = eventloop->maxfd+1; i < setSize; i++) {
+        eventloop->events[i].mask = AE_NONE;
     }
     return AE_OK;
 }
@@ -99,19 +100,19 @@ void aeDeleteEventLoop(aeEventLoop *eventloop) {
 }
 
 int aeCreateFileEvent(aeEventLoop *eventloop, int fd, int mask, aeFileProc *proc, void *clientData) {
-    if (fd >= eventloop->setSize) {
+    if (fd >= eventloop->setsize) {
         errno = ERANGE;
         return AE_ERR;
     }
 
-    aeFileEvent *fe = &eventloop[fd];
-    if (aeAddEvent(eventloop, fd, mask) == -1) {
+    aeFileEvent *fe = &eventloop->events[fd];
+    if (aeApiAddEvent(eventloop, fd, mask) == -1) {
         return AE_ERR;
     }
 
     fe->mask |= mask;
-    if (mask & AE_READABLE) fd->rFileProc = proc;
-    if (mask & AE_WRITABLE) fd->wFileProc = proc;
+    if (mask & AE_READABLE) fe->rFileProc = proc;
+    if (mask & AE_WRITABLE) fe->wFileProc = proc;
     fe->clientData = clientData;
     if (fd > eventloop->maxfd) { //更新maxfd
         eventloop->maxfd = fd;
@@ -123,8 +124,8 @@ void aeDeleteFileEvent(aeEventLoop *eventloop, int fd, int mask) {
     if (fd > eventloop->maxfd) {
         return ;
     }
-    aeFileEvent *fd = &eventloop[fd];
-    if (fd->mask == AE_NONE) return ;
+    aeFileEvent *fe = &eventloop->events[fd];
+    if (fe->mask == AE_NONE) return ;
 
     aeApiDelEvent(eventloop, fd, mask);
     fe->mask = fe->mask & (~mask);
@@ -132,16 +133,16 @@ void aeDeleteFileEvent(aeEventLoop *eventloop, int fd, int mask) {
     if (fd == eventloop->maxfd && fe->mask == AE_NONE) {
         int j ;
         for (j = eventloop->maxfd-1; j>=0; j--) {
-            if (eventloop[j].mask != AE_NONE) {
+            if (eventloop->events[j].mask != AE_NONE) {
                 break;
             }
         }
-        eventLoop->maxfd = j;
+        eventloop->maxfd = j;
     }
 }
 
 int aeGetFileEvents(aeEventLoop *eventloop, int fd) {
-    if (fd > eventloop->setSize) {
+    if (fd > eventloop->setsize) {
         return 0;
     }
     return (eventloop->events[fd]).mask;
@@ -166,7 +167,7 @@ static void aeGetTime(long *seconds, long *milliseconds) {
  * @param seconds      [description]
  * @param milliseconds [description]
  */
-static void aeAddMillisecondsToNow(long long milliseconds, long *seconds, long *milliseconds) {
+static void aeAddMillisecondsToNow(long long milliseconds, long *seconds, long *milseconds) {
     long curSec, curMs, whenSec, whenMs;
 
     aeGetTime(&curSec, &curMs);
@@ -177,7 +178,7 @@ static void aeAddMillisecondsToNow(long long milliseconds, long *seconds, long *
         whenMs  -= whenMs  %1000;
     }
     *seconds = whenSec;
-    *milliseconds = whenMs;
+    *milseconds = whenMs;
 }
 
 
@@ -191,9 +192,9 @@ static void aeAddMillisecondsToNow(long long milliseconds, long *seconds, long *
  * @param  finalizerProc 最后的处理函数
  * @return
  */
-int aeCreateTimeEvent(aeEventLoop *eventloop, long long id, long long milliseconds, aeTimeProc *proc, void *clientData, aeEventFinalizerProc *finalizerProc) {
+int aeCreateTimeEvent(aeEventLoop *eventloop, long long milliseconds, aeTimeProc *proc, void *clientData, aeEventFinalizerProc *finalizerProc) {
     aeTimeEvent *te;
-    if ((te == malloc(sizeof(*te))) == NULL) {
+    if ((te = malloc(sizeof(*te))) == NULL) {
         return AE_ERR;
     }
 
@@ -232,12 +233,10 @@ void aeDeleteTimeEvent(aeEventLoop *eventloop, long long id) {
                 te->finalizerProc(eventloop, te->clientData);
             }
             free(te);
-            return AE_OK;
         }
         prev = te;
         te = te->next;
     }
-    return AE_ERR;
 }
 
 /**
@@ -245,7 +244,7 @@ void aeDeleteTimeEvent(aeEventLoop *eventloop, long long id) {
  * @param  eventloop
  * @return
  */
-static void aeTimeEvent *aeSearchNearestTimer(aeEventLoop *eventloop) {
+static aeTimeEvent *aeSearchNearestTimer(aeEventLoop *eventloop) {
     aeTimeEvent *te = NULL, *prev = NULL, *nearest = NULL;
 
     te = eventloop->timeEventHead;
@@ -268,7 +267,49 @@ static void aeTimeEvent *aeSearchNearestTimer(aeEventLoop *eventloop) {
  * @return           [description]
  */
 static int processTimeEvents(aeEventLoop *eventloop) {
+    int processed = 0;
+    aeTimeEvent *te = NULL;
+    time_t now = time(NULL);
+    long long maxId ;
 
+    //时钟错误
+    if (now < eventloop->lastTime) {
+        te = eventloop->timeEventHead;
+        while (te) {
+            te->when_sec = 0;
+            te = te->next;
+        }
+    }
+    eventloop->lastTime = now;
+
+    te = eventloop->timeEventHead;
+    maxId = eventloop->timeEventNextId - 1;
+    while (te) {
+        if (te->id > maxId) {
+            te = te->next;
+        }
+
+        int id;
+        long now_sec, now_ms;
+        aeGetTime(&now_sec, &now_ms);
+        if (now_sec > te->when_sec || (now_sec == te->when_sec && now_ms >= te->when_ms)) {//触发条件达到
+
+            id = te->id;
+            int retval = te->timeProc(eventloop, id, te->clientData);
+            processed++;
+
+            if (retval != AE_NOMORE) { //只修改时间钟的时间
+                aeAddMillisecondsToNow(retval, &te->when_sec, &te->when_ms);
+            } else {
+                aeDeleteTimeEvent(eventloop, id);
+            }
+            te = eventloop->timeEventHead;
+        } else {
+            te = te->next; //向后遍历
+        }
+    }
+
+    return 0;
 }
 
 /**
@@ -293,10 +334,10 @@ int aeProcessEvents(aeEventLoop *eventloop, int flags) {
         aeTimeEvent *shortest = NULL;
         struct timeval tv, *tvp;
 
-        if (flags & AE_TIME_EVENTS && !(flags & AE_DONT_WAIT)) {
+        if (flags & AE_TIME_EVETNS && !(flags & AE_DONT_WAIT)) {
             shortest = aeSearchNearestTimer(eventloop);
         }
-        if (shortest) {
+        if (shortest) {//有时间事件
             long now_sec, now_ms;
             aeGetTime(&now_sec, &now_ms);
             tvp = &tv;
@@ -348,7 +389,9 @@ int aeProcessEvents(aeEventLoop *eventloop, int flags) {
 
 //等待milliseconds时间，直到fd变成可读、可写、异常
 int aeWait(int fd, int mask, long long milliseconds) {
+    struct pollfd pfd;
 
+    return 0;
 }
 
 

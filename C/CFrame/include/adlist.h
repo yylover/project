@@ -19,8 +19,8 @@ History:
 #ifndef __ADLIST_H_
 #define __ADLIST_H_
 
-#define AL_START_HEAD 0
-#define AL_START_TAIL 1
+#define AL_START_HEAD 0 //iterator 方向
+#define AL_START_TAIL 1 //
 
 typedef struct listNode {
     struct listNode *prev;

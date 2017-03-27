@@ -25,9 +25,10 @@ void printVector(vector *v) {
     int i = 0;
     while (i < v->count) {
         d = vectorGetAt(v, i);
-        printf("%d\n", d->value);
+        printf("%d ", d->value);
         i++;
     }
+    printf("\n");
 }
 
 int vectorCmpFunc(const void *d1, const void *d2) {
@@ -54,6 +55,8 @@ void test_vectorCreate(void **state) {
     d1.value = 2;
     vectorPush(v, &d1);
     assert_int_equal(v->count, 1);
+    data *temp = (data *)vectorGetAt(v, 0);
+    assert_int_equal(temp->value, 2);
 
     data d2;
     d2.value = 4;
@@ -61,7 +64,7 @@ void test_vectorCreate(void **state) {
     assert_int_equal(v->count, 2);
 
     data *d = vectorTop(v);
-    printVector(v);
+    assert_int_equal(d->value, 4);
 
     d = vectorPop(v);
     assert_int_equal(d->value, 4);

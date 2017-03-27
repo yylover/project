@@ -27,6 +27,7 @@ static int aeApiCreate(aeEventLoop *eventloop) {
     eventloop->apidata = state;
     return 0;
     // epoll_create(1024);
+    return 0;
 }
 
 

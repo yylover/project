@@ -9,18 +9,34 @@
 static void freeListNode(list *adlist, listNode *node) {
     node->prev = NULL;
     node->next = NULL;
-    if (adlist->free && node->value) {
+    if (adlist->free) {
         adlist->free(node->value);
     }
+    node->value = NULL;
     free(node);
 }
 
+listNode * createListNode(list *adlist, void *value) {
+    listNode *node = NULL;
+    if (NULL == (node = malloc(sizeof(listNode)))) {
+        return NULL;
+    }
+
+    node->next = NULL;
+    node->prev = NULL;
+    if (adlist->dup) {
+        node->value = adlist->dup(value);
+    } else {
+        node->value = value;
+    }
+    return node;
+}
 
 /**
  * 创建空链表
  *
  * 空链表的头指针和尾指针都是NULL
- * TODO malloc 是否需要初始化
+ * malloc 是否需要初始化
  * @return  链表指针
  */
 list *listCreate(void) {
@@ -86,18 +102,18 @@ list *listDup(list *orgi) {
 
     listNode *node = orgi->head;
     while (node) {
-        void *value;
-        if (adlist->dup) {
-            value = adlist->dup(node->value);
-            if (value == NULL) {
-                listRelease(adlist);
-                return NULL;
-            }
-        } else {
-            value = node->value;
-        }
+        // void *value;
+        // if (adlist->dup) {
+        //     value = adlist->dup(node->value);
+        //     if (value == NULL) {
+        //         listRelease(adlist);
+        //         return NULL;
+        //     }
+        // } else {
+        //     value = node->value;
+        // }
 
-        if (listAddNodeTail(adlist, value) == NULL) {
+        if (listAddNodeTail(adlist, node->value) == NULL) {
             listRelease(adlist);
             freeListNode(adlist, node);
             return NULL;
@@ -114,14 +130,7 @@ list *listDup(list *orgi) {
  * @return        链表指针
  */
 list *listAddNodeHead(list *adlist, void *value) {
-    listNode *node = NULL;
-    if (NULL == (node = malloc(sizeof(listNode)))) {
-        return NULL;
-    }
-
-    node->value = value;
-    node->next = NULL;
-    node->prev = NULL;
+    listNode *node = createListNode(adlist, value);
 
     if (adlist->length == 0) {
         adlist->head = node;
@@ -143,14 +152,7 @@ list *listAddNodeHead(list *adlist, void *value) {
  * @return        链表指针
  */
 list *listAddNodeTail(list *adlist, void *value) {
-    listNode *node = NULL;
-    if (NULL == (node = malloc(sizeof(listNode)))) {
-        return NULL;
-    }
-
-    node->value = value;
-    node->next = NULL;
-    node->prev = NULL;
+    listNode *node = createListNode(adlist, value);
 
     if (adlist->length == 0) {
         adlist->head = node;
@@ -174,21 +176,14 @@ list *listAddNodeTail(list *adlist, void *value) {
  * @return        指针
  */
 list *listInsertNode(list *adlist, listNode* old, void *value, int after) {
-    listNode *node = NULL;
-    if (NULL == (node = malloc(sizeof(listNode)))) {
-        return NULL;
-    }
-
-    node->value = value;
-    node->next = NULL;
-    node->prev = NULL;
+    listNode *node = createListNode(adlist, value);
 
     if (after) {
-        if (adlist->tail == old) {
+        if (adlist->tail == old) {//尾指针
             old->next = node;
             node->prev = old;
             adlist->tail = node;
-        } else {
+        } else { //非尾指针
             node->next = old->next;
             old->next->prev = node;
             node->prev = old;
@@ -217,16 +212,16 @@ list *listInsertNode(list *adlist, listNode* old, void *value, int after) {
  * @param node   要删除的节点
  */
 void listDeleteNode(list *adlist, listNode *node) {
-    if (adlist->head == node && adlist->tail == node) {
+    if (adlist->head == node && adlist->tail == node) { //只有一个节点
         adlist->head = NULL;
         adlist->tail = NULL;
-    } else if (adlist->head == node) {
+    } else if (adlist->head == node) { //头结点
         adlist->head = node->next;
         node->next->prev = NULL;
-    } else if (adlist->tail == node) {
+    } else if (adlist->tail == node) { //尾结点
         adlist->tail = node->prev;
         node->prev->next = NULL;
-    } else {
+    } else { //
         node->prev->next = node->next;
         node->next->prev = node->prev;
     }
@@ -235,7 +230,8 @@ void listDeleteNode(list *adlist, listNode *node) {
     if (adlist->free) {
         adlist->free(node->value);
     }
-    free(node);
+
+    freeListNode(adlist, node);
 }
 
 /**
@@ -349,10 +345,7 @@ void listReleaseIterator(listIter *iter) {
 void listRewind(list *adlist, listIter *iter) {
     if (iter->direction == AL_START_HEAD) {
         iter->next = adlist->head;
-        iter->direction = AL_START_HEAD;
     } else {
         iter->next = adlist->tail;
-        iter->direction = AL_START_TAIL;
     }
-
 }

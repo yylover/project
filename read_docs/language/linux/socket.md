@@ -134,7 +134,7 @@ addrlen：对应的是地址的长度。
 
 ```
 int listen(int sockfd, int backlog);
-//backlog: 可排队的最大连接个数（监听队列的最大长度）。超过backlog,server不受理新的客户连接，客户端收到ECONNREFUSED错误信息。内核2.2之后，仅表示连接状态的socket上线，半连接状态的socket上限是:/proc/sys/net/ipv4/tcp_max_sync_backlog内核参数。
+//backlog: 可排队的最大连接个数（监听队列的最大长度）。超过backlog,server不受理新的客户连接，客户端收到ECONNREFUSED错误信息。内核2.2之后，仅表示连接状态的socket上限，半连接状态的socket上限是:/proc/sys/net/ipv4/tcp_max_sync_backlog内核参数。
 
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 //addr：地址
@@ -250,11 +250,17 @@ int getsockopt(int s, int level, int optname, void* optval, socklen_t* optlen);
 
 ### 网络信息API
 ```
+//完成主机名到地址解析，只支持IPV4, 且不允许调用者指定所需地址类型的任何信息
 struct hostent *gethostbyname(const char *name);
+//完成地址到主机名的解析
 gethostbyaddr
+
 getservbyname
 getservbyport
+
+//gethostbyname 和gethostbyaddr 已经由以下两个函数代替
 getaddrinfo
+getNameInfo
 
 ```
 

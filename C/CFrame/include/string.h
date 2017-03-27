@@ -14,7 +14,6 @@ string* stringNewEmpty(void);
 string* stringDup(string *str);
 void    stringFree(string *str);
 void    stringClear(string *str);
-void    stringResize(string *str, int incr);
 string* stringCatLen(string **str, const void *t, size_t len);
 string* stringCat(string **str, const void *t);
 string* stringCatString(string **str, string *str2);
