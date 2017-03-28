@@ -7,12 +7,18 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <errno.h>
 #include "../include/string.h"
 
 static const unsigned char g_default_ifs[256] = {[9]=1, [10]=1, [13]=1, [32]=1};
 
 static string* stringNewLen(const void *init, size_t len);
 
+/**
+ * 获取string的长度
+ * @param  pstr string指针
+ * @return
+ */
 static inline size_t stringLen(const string *pstr) {
     if (pstr) {
         return pstr->len;
@@ -21,12 +27,34 @@ static inline size_t stringLen(const string *pstr) {
     }
 }
 
+/**
+ * 获取string空余容量
+ * @param  pstr
+ * @return
+ */
 static inline size_t stringAvail(const string *pstr) {
     if (pstr) {
         return pstr->size - pstr->len -1;
     } else {
         return -1;
     }
+}
+
+/**
+ * 扩容算法，
+ *
+ * 原来的是进行两倍扩容，我认为没有必要，太浪费存储空间，使用多少分配多少
+ *
+ * @return [description]
+ */
+static int expandAlgorithm(int lenNew) {
+    /*
+    if (lenNew < STRING_MAX_PREALLOC) {//扩容要扩容两倍?
+        lenNew *= 2;
+    } else {
+        lenNew += STRING_MAX_PREALLOC;
+    }*/
+    return lenNew;
 }
 
 /**
@@ -45,7 +73,8 @@ static inline size_t stringAllocSize(const string *pstr) {
  * @return
  */
 static string* stringNewLen(const void *init, size_t len) {
-    string *pstr = calloc(1, sizeof(*pstr)+len+1);
+    // string *pstr = calloc(1, sizeof(*pstr)+len+1);
+    string *pstr = malloc(sizeof(*pstr)+len+1);
     if (pstr == NULL) {
         return NULL;
     }
@@ -112,31 +141,24 @@ void    stringClear(string *pstr) {
  * TODO 扩容算法有问题，我认为没有必要进行两倍扩容，太浪费存储空间
  */
 static string *stringExpand(string **str, size_t addlen) {
-    size_t len = stringLen(*str);
+    size_t len     = stringLen(*str);
     size_t curFree = stringAvail(*str);
-    size_t lenNew = 0;
+    size_t lenNew  = 0;
 
     if (curFree >= addlen) { //有足够的容量直接返回
         return *str;
     }
 
     lenNew = len + addlen;
-    if (lenNew < STRING_MAX_PREALLOC) {//扩容要扩容两倍?
-        lenNew *= 2;
-    } else {
-        lenNew += STRING_MAX_PREALLOC;
-    }
-    printf("New len :%zu \n", lenNew);
+    lenNew = expandAlgorithm(lenNew); //扩容算法
+
     string *strNew = (string *)realloc(*str, sizeof(string) + lenNew + 1);
     if (NULL == strNew) {
-        printf("strNew NULL \n");
-        return NULL;
-    } else  if (strNew != *str) {
-        printf("strNew NULL \n");
         return NULL;
     }
 
-    strNew->size = lenNew;
+    strNew->size = lenNew+1;
+    *str = strNew;
     return strNew;
 }
 
@@ -151,7 +173,6 @@ string* stringCatLen(string **str, const void *t, size_t len) {
     size_t lenCur = stringLen(*str);
     string *strNew = stringExpand(str, len);
     if (!strNew) {
-        printf("NULL %s %zu \n", t, len);
         return NULL;
     }
 
@@ -173,18 +194,17 @@ string* stringCatString(string **str, string *str2) {
 
 string* stringCpyLen(string **str, const void *t, size_t len) {
     string *pstrNew = NULL;
-    if ((*str)->size < len+1) {
+    if ((*str)->size < len) {
         pstrNew = stringExpand(str, len-(*str)->len);
         if (!pstrNew) {
             return NULL;
         }
-
         assert(pstrNew == *str);
     }
     memcpy((*str)->buf, t, len);
     (*str)->len = len;
     (*str)->buf[len] = '\0';
-    return (*str);
+    return *str;
 }
 string* stringCpy(string **str, const void *t) {
     return stringCpyLen(str, t, strlen(t));
@@ -203,12 +223,13 @@ string* stringCatSprintf(string **str, const char *fmt, ...) {
             return NULL;
         }
 
+        memset(buf, 0, buf_len);
         buf[buf_len-2] = '\0';
         va_copy(ap_cpy, ap);
         vsnprintf(buf, buf_len, fmt, ap_cpy);
         if (buf[buf_len-2] != '\0') {
             free(buf);
-            buf_len +=2;
+            buf_len *=2; //倍数
             continue;
         }
         break;
@@ -216,7 +237,6 @@ string* stringCatSprintf(string **str, const char *fmt, ...) {
     va_end(ap);
 
     string *pstrNew = stringCat(str, buf);
-    assert(pstrNew == *str);
     free(buf);
     return *str;
 
@@ -234,6 +254,7 @@ string* stringSprintf(string **str, const char *fmt, ...) {
             return NULL;
         }
 
+        memset(buf, 0, buf_len);
         buf[buf_len-2] = '\0';
         va_copy(ap_cpy, ap);
         vsnprintf(buf, buf_len, fmt, ap_cpy);
@@ -247,7 +268,6 @@ string* stringSprintf(string **str, const char *fmt, ...) {
     va_end(ap);
 
     string *pstrNew = stringCpy(str, buf);
-    assert(pstrNew == *str);
     free(buf);
     return *str;
 }
@@ -315,12 +335,12 @@ void stringToUpper(string *str) {
  * @param  str2 字符串2
  * @return
  */
-int stringCmp(const char *str1, const char *str2) {
-    size_t len1 = strlen(str1);
-    size_t len2 = strlen(str2);
+int stringCmp(const string *str1, const string *str2) {
+    size_t len1 = strlen(str1->buf);
+    size_t len2 = strlen(str2->buf);
     size_t minlen = len1 < len2 ? len1 : len2;
 
-    int cmp = memcmp(str1, str2, minlen);
+    int cmp = memcmp(str1->buf, str2->buf, minlen);
     if (0 == cmp) {
         return len1 - len2;
     }

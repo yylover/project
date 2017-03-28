@@ -6,6 +6,11 @@
 #include "../include/adlist.h"
 
 
+/**
+ * 释放链表节点
+ * @param adlist
+ * @param node
+ */
 static void freeListNode(list *adlist, listNode *node) {
     node->prev = NULL;
     node->next = NULL;
@@ -16,6 +21,12 @@ static void freeListNode(list *adlist, listNode *node) {
     free(node);
 }
 
+/**
+ * 创建链表节点
+ * @param  adlist 链表
+ * @param  value  值
+ * @return
+ */
 listNode * createListNode(list *adlist, void *value) {
     listNode *node = NULL;
     if (NULL == (node = malloc(sizeof(listNode)))) {
@@ -102,17 +113,6 @@ list *listDup(list *orgi) {
 
     listNode *node = orgi->head;
     while (node) {
-        // void *value;
-        // if (adlist->dup) {
-        //     value = adlist->dup(node->value);
-        //     if (value == NULL) {
-        //         listRelease(adlist);
-        //         return NULL;
-        //     }
-        // } else {
-        //     value = node->value;
-        // }
-
         if (listAddNodeTail(adlist, node->value) == NULL) {
             listRelease(adlist);
             freeListNode(adlist, node);

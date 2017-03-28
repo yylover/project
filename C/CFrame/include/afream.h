@@ -1,6 +1,9 @@
 #ifndef __AFREAM_H__
 #define __AFREAM_H__
+
 #include "athread.h"
+#include "options.h"
+
 
 
 #ifdef __linux__
@@ -18,21 +21,13 @@
 #endif
 #endif
 
-/**
- * 全局配置
- * 默认-->配置文件-->命令行
- */
-typedef struct options {
-    int workerNum; //工作线程数
-    char *soName;  //动态连接库名称
+struct options;
 
-    char *serverIp;  //服务器IP
-    char *serverPort; //服务器端口号
-    int  maxClients;  //最大连接数
+typedef struct soFunc {
+    int (*handleInit)(void);
 
-    adlist *linklist;
 
-} options_t;
+} soFunc;
 
 typedef struct instance_t  {
     threadPool *pool;

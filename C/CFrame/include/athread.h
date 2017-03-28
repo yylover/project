@@ -2,6 +2,7 @@
 #define __ATHREAD_H__
 
 #include "lock.h"
+#include "ae.h"
 
 #define THREAD_STACK_SIZE 10*1024*1024 //栈大小,10M
 
@@ -12,7 +13,7 @@ typedef enum workerStat {
     W_STOPED
 } workerStat;
 
-struct threadPool;
+typedef struct threadPool threadPool;
 
 typedef struct threadWorker {
 
@@ -28,7 +29,7 @@ typedef struct threadWorker {
     void          *priv_data; //worker 自身数据
 } threadWorker;
 
-typedef struct threadPool {
+struct threadPool {
     mutexLock *lock;
 
     threadWorker **threadWorkers; //数组
@@ -37,7 +38,7 @@ typedef struct threadPool {
     int threadStackSize; //线程栈大小
     int clientTimeout;   //client 超时时间
     int pollInterval;    //worker线程cron频率
-} threadPool;
+} ;
 
 threadPool *threadPoolCreate(int workerNum, int stackSize, void* (*workerTask)(void *arg));
 int threadPollDestroy(threadPool *pool);
