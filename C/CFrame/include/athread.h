@@ -43,7 +43,7 @@ struct threadPool {
 threadPool *threadPoolCreate(int workerNum, int stackSize, void* (*workerTask)(void *arg));
 int threadPollDestroy(threadPool *pool);
 void *threadWorkerCycle(void *arg);
-threadWorker *getWorker(int workerId);
+threadWorker *getWorker(threadPool *pool, int workerId);
 
 void threadSleep(int seconds);
 void threadUsecsleep(int useconds);

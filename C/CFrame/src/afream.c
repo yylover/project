@@ -4,6 +4,9 @@
 #include <getopt.h>
 #include "../include/afream.h"
 #include "../include/options.h"
+#include "../include/anet.h"
+#include "../include/master.h"
+#include "../include/log.h"
 
 
 #define CONFIG_FILENAME_MAXLENGTH 128
@@ -40,12 +43,14 @@ struct option longopts[] = {
 static instance_t* createInstance(options_t *opts) {
     instance_t *instance = (instance_t*) malloc(sizeof(*instance));
     if (NULL == instance) {
+        LOG_INFO("instance null");
         return NULL;
     }
     memset(instance, 0, sizeof(*instance));
 
     instance->pool = threadPoolCreate(opts->workerNum, opts->stackSize, workerTask);
     if (!instance->pool) {
+        LOG_INFO("instance null");
         free(instance);
         return NULL;
     }
@@ -145,19 +150,31 @@ static void getCommandArgs(int argc, char **argv, char *configFile) {
 
 int main(int argc, char **argv) {
     char configFile[CONFIG_FILENAME_MAXLENGTH];
+    memset(configFile, 0, CONFIG_FILENAME_MAXLENGTH);
     getCommandArgs(argc, argv, configFile);
+    if (configFile[0] == '\0') {
+        strcpy(configFile, "afream.conf");
+    }
 
     options_t *opts = getOptions(configFile);
+    if (opts == NULL) {
+        printf("options is null %s\n", configFile);
+        exit(EXIT_FAILURE);
+    }
     instance_t *instance = createInstance(opts);
     if (instance == NULL) {
-        //ERROR
+        LOG_INFO("instance is null");
         return -1;
     }
 
+    LOG_INFO("hello");
     // instance->pool = threadPoolCreate();
     // 主线程 创建tcp server 并且等待accept
     // accept 之后添加一个新的socket fd 到监控列表中
-    
+    //
+    char err[128];
+    int sock = anetTcpServer(err, 8000, "127.0.0.1", 10);
+    masterCycle(sock, 1000, 10);
 
     destroyInstance(instance);
     destroyOptions(opts);

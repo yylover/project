@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <unistd.h>
+#include <assert.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
@@ -12,6 +13,7 @@
 #include <netinet/tcp.h>
 
 #include "../include/athread.h"
+#include "../include/log.h"
 
 #define IOBUF_SIZE 4096
 #define MAX_PROT_LEN 10485760 /* 10M  最大请求包*/
@@ -36,7 +38,7 @@ static int threadWorkerCreate(threadPool *pool, void *(*workerTask)(void *arg), 
     assert(pool != NULL && workerTask != NULL);
 
     threadWorker *worker = NULL;
-    if (NULL == (worker = calloc(1, *worker))) {
+    if (NULL == (worker = calloc(1, sizeof(*worker)))) {
         return -1;
     }
 
@@ -57,13 +59,18 @@ static int threadWorkerCreate(threadPool *pool, void *(*workerTask)(void *arg), 
         return -1;
     }
 
-    if (pthread_create(&worker->tid, &attr, workerTask, NULL) != -1) {
+    if (pthread_create(&worker->tid, &attr, workerTask, NULL) != 0) {
         pthread_attr_destroy(&attr);
         free(worker);
         return -1;
     }
 
     pthread_attr_destroy(&attr);
+    return 0;
+}
+
+int threadWorkerDestroy(threadWorker *worker) {
+
     return 0;
 }
 
@@ -78,7 +85,7 @@ threadPool *threadPoolCreate(int workerNum, int stackSize, void* (*workerTask)(v
     assert(workerNum > 0 && stackSize > 0);
 
     threadPool *pool = NULL;
-    if (NULL == (poll = calloc(1, sizeof(*poll)))) {
+    if (NULL == (pool = calloc(1, sizeof(*pool)))) {
         return NULL;
     }
 
@@ -97,6 +104,7 @@ threadPool *threadPoolCreate(int workerNum, int stackSize, void* (*workerTask)(v
     for (i = 0; i < workerNum; i++) {
         if (threadWorkerCreate(pool, workerTask, i) != 0) {
             //TODO threadWorker 释放
+            LOG_INFO("worker init failed");
             free(pool);
             return NULL;
         }
@@ -110,10 +118,9 @@ threadPool *threadPoolCreate(int workerNum, int stackSize, void* (*workerTask)(v
  * @param  pool [description]
  * @return      [description]
  */
-int threadPollDestroy(threadPool *pool); {
+int threadPollDestroy(threadPool *pool) {
     assert(pool != NULL);
 
-    //
     int i = 0;
     for (; i < pool->threadWorkerNum; i++) {
         threadWorker *worker = pool->threadWorkers[i];
@@ -170,7 +177,7 @@ threadWorker *getWorker(threadPool *pool, int workerId) {
  * @return     [description]
  */
 void *threadWorkerCycle(void *arg) {
-
+    return NULL;
 }
 
 // void writeToClient(aeEventLoop *el, int fd, void *privdata, int mask) {
