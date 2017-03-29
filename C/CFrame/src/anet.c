@@ -250,19 +250,22 @@ int anetTcpAccept(char *err, int serversock, char *ip, size_t ip_len, int *port)
 
     // struct sockaddr sa;
     struct sockaddr_storage sa;
-    socklen_t len;
+    socklen_t len = sizeof(sa); //** important,一定要传入大小
     if ((fd = anetGenericAccept(err, serversock, (struct sockaddr*)&sa, &len)) == ANET_ERR) {
         return ANET_ERR;
     }
 
+    printf("ss_family: %d\n", sa.ss_family);
     if (sa.ss_family == AF_INET) { //ipv4
         struct sockaddr_in *si = (struct sockaddr_in *)&sa;
+
         if (ip) {
-            inet_ntop(AF_INET, &si->sin_addr, ip, ip_len);
+            inet_ntop(AF_INET, &(si->sin_addr), ip, ip_len);
         }
         if (port) {
             *port = ntohs(si->sin_port);
         }
+        printf("sinaddr :%s %d", ip, si->sin_port);
     } else {//ipv6
         struct sockaddr_in6 *si = (struct sockaddr_in6 *)&sa;
         if (ip) {
@@ -437,6 +440,7 @@ int anetRead(int fd, char *buf, int count) {
     while (totlen < count) {
         nread = read(fd, buf, count-totlen);
         if (nread == 0) {  // 读取完成
+            printf("已经读写完成");
             return totlen;
         }
         if (nread == -1) { //读错误

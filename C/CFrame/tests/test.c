@@ -17,6 +17,7 @@ int main() {
     size_t t = time(NULL);
 
     printf("%zu", t);
+    printf("NULL == 0: %d", NULL == 0);
     free(p);
     return 0;
 }

@@ -1,5 +1,5 @@
 #include "../include/so.h"
-#include <fcn.h>
+#include <fcntl.h>
 
 /**
  * 1. dlopen() 之后，最后才能dlclose()，否则dlsym()打开的函数是不可用的

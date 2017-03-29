@@ -23,21 +23,21 @@ typedef enum ClientStatus {
 } ClientStatus;
 
 typedef struct masterThread {
-    int     listenfd;     //当前的监听描述符
-    int     clientLimit;  //client连接数限制
-    int     pollInterval; //cron频率
-    masterStatus status;  //主线程状态
+    int     listenfd;       //当前的监听描述符
+    int     clientLimit;    //client连接数限制
+    int     pollInterval;   //cron频率
+    masterStatus status;    //主线程状态
 
-    int    curConn;       //上一次新增client在clientVec中的位置
-    int    curThread;     //
-    int    totalClients;  //连接总数
-    vector *clients;      // 所有的连接
-    aeEventLoop *eventloop; //时间循环
+    int    curConn;         //上一次新增client在clientVec中的位置
+    int    curThread;       //
+    int    totalClients;    //连接总数
+    vector *clients;        // 所有的连接
+    aeEventLoop *eventloop; //事件循环
 } masterThread;
 
 typedef struct Client {
     int fd;              // fd 套接字
-    int closeConn;       // 是否关闭连接
+    int closeConn;       // 是否发送响应后就关闭连接
     ClientStatus status; // 连接状态
     char *remoteIp;      //
     int remotePort;      //
@@ -52,7 +52,7 @@ typedef struct Client {
 
 
 void masterCycle(int listenfd, int clientLimit, int pollInterval); // 主线程循环
-void closeClient(int clientIdx, char *info);
+void closeClientByIndx(int clientIdx, char *info);
 int masterDestroy(masterThread *master);
 
 #endif
