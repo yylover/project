@@ -7,6 +7,7 @@
 #include "../include/anet.h"
 #include "../include/master.h"
 #include "../include/log.h"
+#include "../include/signal.h"
 
 
 #define CONFIG_FILENAME_MAXLENGTH 128
@@ -14,6 +15,7 @@
 #define PROGRAME_VERSION "1.1"
 
 int gStartMode;
+instance_t *gInstance;
 
 //优化的通知程序启动，停止和重启
 typedef enum startMode {
@@ -61,6 +63,7 @@ static instance_t* createInstance(options_t *opts) {
 
 /**
  * 释放当前程序实例
+ *
  * @param instance
  */
 static void destroyInstance(instance_t *instance) {
@@ -72,7 +75,7 @@ static void destroyInstance(instance_t *instance) {
 static void printInfo() {
     printf("[%s]: An async network server framework.\n"
           "Version: %s\n"
-          "Copyright(c): hq, hq_cml@163.com\n"
+          "Copyright(c): yd, yylover@foxmail.com\n"
           "Compiled at: %s %s\n", PROGRAME_NAME, PROGRAME_VERSION,
           __DATE__, __TIME__);
 }
@@ -166,16 +169,36 @@ int main(int argc, char **argv) {
         LOG_INFO("instance is null");
         return -1;
     }
+    gInstance = instance;
 
     LOG_INFO("hello");
+    threadPipeChannel *chan = createThreadPipeChannel();
+    if (!chan) {
+        LOG_ERROR("create pipe channel failed");
+        return -1;
+    }
+
+    //信号
+    if (handlePrivateSignals() != 0) {
+        LOG_ERROR("init private signal handler failed");
+        return -1;
+    }
+
+    if (handlePublicSignals(chan) != 0) {
+        LOG_ERROR("init public signal handler failed");
+        return -1;
+    }
+
+
     // instance->pool = threadPoolCreate();
     // 主线程 创建tcp server 并且等待accept
     // accept 之后添加一个新的socket fd 到监控列表中
     //
     char err[128];
     int sock = anetTcpServer(err, 8000, "127.0.0.1", 10);
-    masterCycle(sock, 1000, 10);
+    masterCycle(sock, 1000, 10, chan);
 
+    destroyThreadPipeChannel(chan);
     destroyInstance(instance);
     destroyOptions(opts);
     return 0;

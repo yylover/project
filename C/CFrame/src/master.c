@@ -7,7 +7,11 @@
 #include "../include/master.h"
 #include "../include/log.h"
 #include "../include/anet.h"
+#include "../include/signal.h"
+#include "../include/athread.h"
+#include "../include/afream.h"
 
+extern instance_t *gInstance;
 
 /**
  * 创建主线程
@@ -161,6 +165,84 @@ void connectAccept(struct aeEventLoop *eventloop, int fd, void *clientData, int 
     aeCreateFileEvent(eventloop, sock, AE_READABLE, handleReceive, clientData);
 }
 
+/**
+ * 主线程关闭指令
+ *
+ *   1. 关闭listenfd
+ *   2. 向所有worker线程发送关闭指令
+ *   3. eventloop 退出
+ */
+void masterShutDown(masterThread *master) {
+
+    //用户自定义析构函数
+
+    //关闭listenfd, 程序会处于半连接状态，无法接收新的连接
+    aeDeleteFileEvent(master->eventloop, master->listenfd, AE_READABLE);
+    close(master->listenfd);
+
+    //
+    int i,info;
+    threadWorker *worker = NULL;
+    for (i = 0; i < gInstance->pool->threadWorkerNum; i++) {
+        worker = *(gInstance->pool->threadWorkers+i);
+        if (worker && worker->tid) {
+
+            info = -1;
+            int res = write(worker, &info, sizeof(int));
+            if (res == -1) {
+                LOG_ERROR("pipe write error :%d", errno);
+                return ;
+            }
+        }
+    }
+    //UNLOCK
+
+    threadUsecsleep(10*1000);
+
+    do {
+        int quitWorkers = 0;
+        for (i = 0; i < gInstance->pool->threadWorkerNum; i++) {
+            //判断连接状态
+
+
+            quitWorkers ++;
+        }
+
+        if (quitWorkers <= 0) {
+            break;
+        } else {
+            LOG_WARNING("Still not shutdown! (%d)", quitWorkers);
+            threadUsecsleep(100 * 1000);
+        }
+    } while (1);
+
+    //退出eventloop
+    aeMainLoop(master->eventloop);
+
+    LOG_INFO("master shut down");
+    return ;
+
+}
+
+
+void handleSignalEvent(struct aeEventLoop *eventloop, int fd, void *clientData, int mask) {
+    char buf[10];
+    int nread = anetRead(fd, buf, 4);
+    printf("signal :%s %d\n", buf, nread);
+
+    if (nread != 4) {
+        LOG_ERROR("master receive signal not errr:%s", buf);
+        return;
+    }
+
+    masterThread *master = (masterThread *) clientData;
+    if (strncpy(buf, "stop", 4) == 0) {
+        master->status = STOPING;
+        //通知所有的子线程
+        masterShutDown(master);
+    }
+}
+
 
 /**
  * 定时check 所有的client，如果有失效或断开的连接清除client信息
@@ -185,8 +267,7 @@ int  checkClients(struct aeEventLoop *eventloop, long long id, void *clientData)
  * @param clientLimit  [description]
  * @param pollInterval [description]
  */
-void masterCycle(int listenfd, int clientLimit, int pollInterval) {
-
+void masterCycle(int listenfd, int clientLimit, int pollInterval, threadPipeChannel * chan) {
     masterThread *master = createMaster(listenfd, clientLimit, pollInterval);
     if (NULL == master) {
         return;
@@ -209,7 +290,10 @@ void masterCycle(int listenfd, int clientLimit, int pollInterval) {
         return;
     }
 
-    if (aeCreateFileEvent(master->eventloop, int fd, int mask, aeFileProc *proc, void *clientData))
+    if (aeCreateFileEvent(master->eventloop, chan->readFd, AE_READABLE, handleSignalEvent, master) != 0) {
+        destroyMaster(master);
+        return ;
+    }
 
     aeMainLoop(master->eventloop);
 

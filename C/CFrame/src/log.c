@@ -8,6 +8,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <errno.h>
+#include <time.h>
 #include "../include/log.h"
 
 static char *logLevelName[] = {
@@ -24,6 +25,14 @@ static log_t g_log; // 全局句柄
 /** 私有函数原型 **/
 static int logRotate(int fd, const char *path, int level);
 
+
+static char* getLevelName(int index) {
+    if (index > 5 || index < 0) {
+        return "";
+    } else {
+        return logLevelName[index];
+    }
+}
 
 /**
  * 根据ok的值，在屏幕输出红色或绿色，最长不超过80字符
@@ -81,7 +90,16 @@ int logWrite(int level, const char *fmt, ...) {
     }
     va_end(ap);
 
-    printf("%s\n", buf);
+    struct tm tm;
+    char log_buffer[100];
+    time_t now = time(NULL);
+    localtime_r(&now, &tm);
+    sprintf(log_buffer, "[%04d-%02d-%02d %02d:%02d:%02d][%05d][%s]",
+                tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday,
+                tm.tm_hour, tm.tm_min, tm.tm_sec, getpid(),
+                getLevelName(level));
+
+    printf("%s %s\n",log_buffer, buf);
     free(buf);
     return 0;
     // vasprint

@@ -5,6 +5,7 @@
 #include "string.h"
 #include "vector.h"
 #include "ae.h"
+#include "signal.h"
 
 //主线程主要开始server并监听连接套接字
 
@@ -51,7 +52,7 @@ typedef struct Client {
 } Client;
 
 
-void masterCycle(int listenfd, int clientLimit, int pollInterval); // 主线程循环
+void masterCycle(int listenfd, int clientLimit, int pollInterval, threadPipeChannel *chan); // 主线程循环
 void closeClientByIndx(int clientIdx, char *info);
 int masterDestroy(masterThread *master);
 
