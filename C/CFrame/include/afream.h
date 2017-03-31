@@ -3,7 +3,7 @@
 
 #include "athread.h"
 #include "options.h"
-
+#include "lock.h"
 
 
 #ifdef __linux__
@@ -32,6 +32,8 @@ typedef struct soFunc {
 typedef struct instance_t  {
     threadPool *pool;
     options_t  *opts; //全局配置文件句柄
+    mutexLock *lock;
+    masterThread *master;
 
 } instance_t;
 

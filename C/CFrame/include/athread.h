@@ -3,29 +3,29 @@
 
 #include "lock.h"
 #include "ae.h"
+#include "signal.h"
+#include "adlist.h"
 
 #define THREAD_STACK_SIZE 10*1024*1024 //栈大小,10M
 
 //工作线程状态
 typedef enum workerStat {
-    W_RUNNING,
-    W_STOPING,
-    W_STOPED
+    WS_RUNNING,
+    WS_STOPING,
+    WS_STOPED
 } workerStat;
 
 typedef struct threadPool threadPool;
 
 typedef struct threadWorker {
-
     pthread_t tid;       //线程id
-    int notify_read_fd;  //master worker 线程通信管道读取端
-    int notify_write_fd; //master worker 线程通信管道写端
-    workerStat status;   //线程工作状态
     int idx;             // 在worker列表的索引位置
+    threadPipeChannel *chan; //
+    workerStat status;   //线程工作状态
 
-    // aeEventLoop   *ael; //ae句柄
+    aeEventLoop   *ael; //ae句柄
     threadPool    *pool; //线程池指针
-    // adlist        *client_list; //本线程负责的client
+    list          *clientList; //本线程负责的client
     void          *priv_data; //worker 自身数据
 } threadWorker;
 

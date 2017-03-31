@@ -18,6 +18,9 @@ typedef enum masterStatus {
 typedef enum ClientStatus {
     COMMING,
     DISPATCHING,
+    WAITING,
+    RECEIVING,
+    PROCESSING,
     ACCEPTED,
     CONNECTED,
     CLOSING
@@ -28,6 +31,7 @@ typedef struct masterThread {
     int     clientLimit;    //client连接数限制
     int     pollInterval;   //cron频率
     masterStatus status;    //主线程状态
+    mutexLock *lock;        //互斥锁
 
     int    curConn;         //上一次新增client在clientVec中的位置
     int    curThread;       //
