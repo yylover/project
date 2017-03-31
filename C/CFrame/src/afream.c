@@ -189,6 +189,17 @@ int main(int argc, char **argv) {
         return -1;
     }
 
+    // 初始化线程池
+    if ((gInstance->pool = threadPoolCreate(opts->workerNum, opts->stackSize, threadWorkerCycle)) != 0) {
+        LOG_ERROR("Create thread pool failed");
+    }
+    LOG_INFO("Craete thread pool success");
+
+    //修改进程title
+
+    // 重定向 标准输出
+
+    //
 
     // instance->pool = threadPoolCreate();
     // 主线程 创建tcp server 并且等待accept

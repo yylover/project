@@ -37,6 +37,7 @@ masterThread *createMaster(int listenfd, int clientLimit, int pollInterval) {
     master->totalClients = 0;
     master->clients = vectorCreate(clientLimit, sizeof(Client));
     master->eventloop = aeCreateEventloop(1024);
+    pthreadMutexInit(master->lock);
 
     return master;
 }
@@ -49,6 +50,7 @@ void destroyMaster(masterThread *master) {
     if (master) {
         vectorFree(master->clients);
         aeDeleteEventLoop(master->eventloop);
+        pthreadMutexDestroy(master->lock);
     }
 
     free(master);

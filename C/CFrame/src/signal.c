@@ -15,8 +15,10 @@
 
 /**
 
+## 管道操作:
+    *写进程就会试图向管道写入数据。如果读进程不读走管道缓冲区中的数据，那么写操作将一直阻塞
 
-struct sigaction :
+## struct sigaction :
     * sa_flags:
         * SA_SIGINFO:void (*sa_handler)(int) 或 void(*sa_sigaction)(int,siginfo_t *, void *) 使用哪一个处理函数
         * SA_RESETHAND:当调用信号处理函数时，则系统调用自动
