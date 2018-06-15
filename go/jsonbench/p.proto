@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package jsonbench;
+
+message NewsPb {
+    string id = 1;
+    string title = 2;
+    string articletype = 3;
+}
+
