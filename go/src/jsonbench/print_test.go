@@ -1,10 +1,10 @@
 package jsonbench
 
-import (
-    "testing"
-    "github.com/json-iterator/go"
-    "github.com/golang/protobuf/proto"
-)
+//import (
+//    "testing"
+//    jsoniter "github.com/json-iterator/go"
+//    "github.com/golang/protobuf/proto"
+//)
 
 //func BenchmarkSprintf(b *testing.B){
 //    num:=10
@@ -40,30 +40,31 @@ import (
 //    }
 //}
 
-func BenchmarkDJson(b *testing.B) {
-    n := News{
-        Id : "idvalue",
-        Title: "usb",
-        Articletype: "56",
-    }
-    var djson = jsoniter.ConfigCompatibleWithStandardLibrary
-    b.ResetTimer()
-    for i:=0;i<b.N;i++{
-        data, _ := djson.Marshal(n)
-        djson.Unmarshal(data, &n)
-    }
-}
-
-func BenchmarkPbMarshal(b *testing.B) {
-    n := NewsPb{
-        Id : "idvalue",
-        Title: "usb",
-        Articletype: "56",
-    }
-    b.ResetTimer()
-    for i:=0;i<b.N;i++{
-        data := proto.MarshalTextString(&n)
-        proto.UnmarshalText(data, &n)
-    }
-}
-
+//func BenchmarkDJson(b *testing.B) {
+//    n := News{
+//        Id : "idvalue",
+//        Title: "usb",
+//        Articletype: "56",
+//    }
+//    var djson = jsoniter.ConfigCompatibleWithStandardLibrary
+//
+//    b.ResetTimer()
+//    for i:=0;i<b.N;i++{
+//        data, _ := djson.Marshal(n)
+//        djson.Unmarshal(data, &n)
+//    }
+//}
+//
+//func BenchmarkPbMarshal(b *testing.B) {
+//    n := NewsPb{
+//        Id : "idvalue",
+//        Title: "usb",
+//        Articletype: "56",
+//    }
+//    b.ResetTimer()
+//    for i:=0;i<b.N;i++{
+//        data := proto.MarshalTextString(&n)
+//        proto.UnmarshalText(data, &n)
+//    }
+//}
+//

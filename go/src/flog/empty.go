@@ -1,4 +1,4 @@
-package log
+package flog
 
 type EmptyLogger struct {
 }

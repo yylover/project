@@ -1,13 +1,19 @@
-package log
+package flog
 
 type Log struct {
 	loglevel LOGLEVEL
+	logger *FileLog
 }
 
 func NewLogger(logpath string, logPrefix string, logname string, logLevel LOGLEVEL, logNum int, logSize int, shifttype SHIFT_TYPE, options ...interface{}) *Log {
-	l := &Log{}
+	l := NewFileLog(logpath, logPrefix, logname, logLevel, logNum, logSize, shifttype)
 
-	return l
+	log := &Log {
+		loglevel:logLevel,
+		logger: l,
+	}
+
+	return log
 }
 
 func (this *Log) SetLogLevel(level LOGLEVEL) {
@@ -45,7 +51,10 @@ func (this *Log) Fatal(format string, v ...interface{}) {
 }
 
 func (this *Log) Close() {
+	this.logger.Close()
 	//TODO
 }
 
-func (this *Log) logprint(level LOGLEVEL, format string, v ...interface{}) {}
+func (this *Log) logprint(level LOGLEVEL, format string, v ...interface{}) {
+	this.logger.Logprint(level, format, v...)
+}
