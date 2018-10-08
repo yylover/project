@@ -6,5 +6,17 @@ message NewsPb {
     string id = 1;
     string title = 2;
     string articletype = 3;
+    string shortUrl = 4;
+    string BigImg = 5;
+    string Flag = 6;
+    string
+    ShortUrl:    "wrwer",
+    		BigImg:      "werwr",
+    		Flag:        "werwr",
+    		Cid:         "werwr",
+    		Vid:         "werwr",
+    		Duration:    "werwr",
+    		Reason:      "werwr",
+    		ReasonFlag:  "werwr",
 }
 

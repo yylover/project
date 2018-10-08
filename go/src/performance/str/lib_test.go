@@ -17,13 +17,13 @@ func test2() {
 	_ = bytes2str(b)
 }
 
-func BenchmarkTest(b *testing.B) {
+func BenchmarkOriginal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		test()
 	}
 }
 
-func BenchmarkTest2(b *testing.B) {
+func BenchmarkStrlib(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		test2()
 	}

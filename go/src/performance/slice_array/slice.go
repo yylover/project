@@ -4,8 +4,6 @@ import (
 	"fmt"
 )
 
-
-
 const capacity = 1024
 
 func array() [capacity]int {

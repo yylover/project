@@ -9,6 +9,8 @@ import (
 利用 GODEBUG来深入了解调度器的行为，可以告诉用户程序的行为
 > go build ..
 > GOMAXPROCS=1 GODEBUG=schedtrace=1000 ./scheduler
+> GOMAXPROCS=1 GODEBUG=scheddetail=1,schedtrace=1000 ./scheduler
+
 
 SCHED 0ms: gomaxprocs=2 idleprocs=0 threads=4 spinningthreads=1 idlethreads=0 runqueue=0 [0 0]
 SCHED 1003ms: gomaxprocs=2 idleprocs=2 threads=4 spinningthreads=0 idlethreads=2 runqueue=0 [0 0]
