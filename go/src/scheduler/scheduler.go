@@ -1,8 +1,8 @@
 package main
 
 import (
-	"sync"
-	"time"
+    "sync"
+    "time"
 )
 
 /*
@@ -42,32 +42,32 @@ var counter int
 var lock sync.Mutex
 
 func main() {
-	counter = 0
+    counter = 0
 
-	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
-		go work(&wg, i)
-		wg.Add(1)
-	}
+    var wg sync.WaitGroup
+    for i := 0; i < 10; i++ {
+        go work(&wg, i)
+        wg.Add(1)
+    }
 
-	wg.Wait()
+    wg.Wait()
 
-	print("main loop quit\n")
-	print(counter)
+    print("main loop quit\n")
+    print(counter)
 }
 
 func addCounter() {
-	lock.Lock()
-	counter++
-	lock.Unlock()
+    lock.Lock()
+    counter++
+    lock.Unlock()
 }
 
 func work(wg *sync.WaitGroup, idx int) {
-	// time.Sleep(time.Second)
-	for i := 0; i < 1000; i++ {
-		time.Sleep(time.Millisecond * 10)
-		addCounter()
-	}
-	time.Sleep(time.Millisecond * 100)
-	wg.Done()
+    // time.Sleep(time.Second)
+    for i := 0; i < 1000; i++ {
+        time.Sleep(time.Millisecond * 10)
+        addCounter()
+    }
+    time.Sleep(time.Millisecond * 100)
+    wg.Done()
 }
