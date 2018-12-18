@@ -5,6 +5,10 @@ import (
 	"reflect"
 )
 
+/**
+https://juejin.im/post/5a75a4fb5188257a82110544
+ */
+
 type News struct {
 	Id          string `json:"id,omitempty"`
 	Title       string `json:"title"`
